@@ -5,9 +5,9 @@ pub fn generator(input: &str) -> Vec<(u8, i32)> {
     input
         .lines()
         .map(|line| {
-            let d = line.as_bytes()[0];
-            let amount: i32 = line.split_once(' ').unwrap().1.parse().unwrap();
-            (d, amount)
+            let (dir, amount) = line.split_once(' ').unwrap();
+            let amount: i32 = amount.parse().unwrap();
+            (dir.as_bytes()[0], amount)
         })
         .collect()
 }
