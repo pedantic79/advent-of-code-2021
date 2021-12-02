@@ -4,5 +4,6 @@ pub mod matrix;
 pub mod utils;
 
 pub mod day01;
+pub mod day02;
 // Insert before
 aoc_lib! { year = 2021 }
