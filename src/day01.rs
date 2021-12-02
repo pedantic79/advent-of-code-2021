@@ -5,6 +5,23 @@ pub fn generator(input: &str) -> Vec<usize> {
     input.lines().map(|s| s.parse().unwrap()).collect()
 }
 
+#[aoc(day1, part1)]
+pub fn part1(inputs: &[usize]) -> usize {
+    inputs.windows(2).filter(|w| w[0] < w[1]).count()
+}
+
+#[aoc(day1, part2)]
+pub fn part2(inputs: &[usize]) -> usize {
+    inputs
+        .windows(4)
+        .filter(|w| {
+            let a: usize = w[..3].iter().sum();
+            let b: usize = w[1..].iter().sum();
+            a < b
+        })
+        .count()
+}
+
 fn solve_fastest<const N: usize>(inputs: &[usize]) -> usize {
     let mut count = 0;
 
@@ -17,58 +34,49 @@ fn solve_fastest<const N: usize>(inputs: &[usize]) -> usize {
     count
 }
 
-// #[aoc(day1, part1)]
-// pub fn part1(inputs: &[usize]) -> usize {
-//     inputs.windows(2).filter(|w| w[0] < w[1]).count()
-// }
-
 #[aoc(day1, part1, fastest)]
 pub fn part1_fastest(inputs: &[usize]) -> usize {
     solve_fastest::<1>(inputs)
 }
-
-// #[aoc(day1, part2)]
-// pub fn part2(inputs: &[usize]) -> usize {
-//     inputs
-//         .windows(4)
-//         .filter(|w| {
-//             let a: usize = w[..3].iter().sum();
-//             let b: usize = w[1..].iter().sum();
-//             a < b
-//         })
-//         .count()
-// }
-
-// #[aoc(day1, part2, fast)]
-// pub fn part2_fast(inputs: &[usize]) -> usize {
-//     inputs.windows(4).filter(|w| w[0] < w[3]).count()
-// }
-
-// #[aoc(day1, part2, l)]
-// pub fn part2_l(inputs: &[usize]) -> usize {
-//     let mut sum: usize = inputs[..3].iter().sum();
-//     let mut count = 0;
-
-//     for w in inputs.windows(4) {
-//         let old = sum;
-//         sum = sum - w[0] + w[3];
-//         if sum > old {
-//             count += 1;
-//         }
-//     }
-
-//     count
-// }
 
 #[aoc(day1, part2, fastest)]
 pub fn part2_fastest(inputs: &[usize]) -> usize {
     solve_fastest::<3>(inputs)
 }
 
+// fn solve_fast<const N: usize>(inputs: &[usize]) -> usize {
+//     inputs.windows(N + 1).filter(|w| w[0] < w[N]).count()
+// }
+
+// #[aoc(day1, part1, fast)]
+// pub fn part1_fast(inputs: &[usize]) -> usize {
+//     solve_fast::<1>(inputs)
+// }
+
+// #[aoc(day1, part2, fast)]
+// pub fn part2_fast(inputs: &[usize]) -> usize {
+//     solve_fast::<3>(inputs)
+// }
+
+// #[aoc(day1, part2, fold)]
+// pub fn part2_fold(inputs: &[usize]) -> usize {
+//     inputs
+//         .windows(4)
+//         .fold((inputs[..3].iter().sum::<usize>(), 0), |(sum, count), w| {
+//             let new_sum = sum - w[0] + w[3];
+//             if new_sum > sum {
+//                 (new_sum, count + 1)
+//             } else {
+//                 (new_sum, count)
+//             }
+//         })
+//         .1
+// }
+
 // #[aoc(day1, part2, queue)]
 // pub fn part2_queue(inputs: &[usize]) -> usize {
 //     assert!(inputs.len() > 3);
-//     let mut windows = VecDeque::with_capacity(3);
+//     let mut windows = std::collections::VecDeque::with_capacity(3);
 //     windows.extend(&inputs[..3]);
 //     let first3: usize = inputs[..3].iter().sum();
 
