@@ -19,13 +19,11 @@ pub fn part1(lines: &[String]) -> usize {
         }
     }
 
-    let mut gamma = 0;
-    let mut epsilon = 0;
     let threshold = lines.len() / 2;
-    for &x in freq.iter() {
-        gamma = gamma * 2 + if x > threshold { 1 } else { 0 };
-        epsilon = epsilon * 2 + if x < threshold { 1 } else { 0 };
-    }
+    let (gamma, epsilon) = freq.iter().fold((0, 0), |(g, e), &x| {
+        let (gx, ge) = if x > threshold { (1, 0) } else { (0, 1) };
+        (g * 2 + gx, e * 2 + ge)
+    });
 
     gamma * epsilon
 }
