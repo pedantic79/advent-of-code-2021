@@ -26,27 +26,23 @@ pub fn part1(lines: &[String]) -> usize {
     gamma * epsilon
 }
 
+fn count_bits<S: AsRef<str>>(data: &[S], pos: usize) -> (usize, usize) {
+    data.iter()
+        .map(|l| l.as_ref().as_bytes()[pos])
+        .fold(
+            (0, 0),
+            |(x, y), b| if b == b'0' { (x + 1, y) } else { (x, y + 1) },
+        )
+}
+
 #[aoc(day3, part2)]
 pub fn part2(lines: &[String]) -> usize {
     let mut set_generator: Vec<_> = lines.iter().collect();
     let mut set_scrubber: Vec<_> = lines.iter().collect();
 
     for pos in 0..lines[0].len() {
-        let g = set_generator
-            .iter()
-            .map(|l| l.as_bytes()[pos])
-            .fold(
-                (0, 0),
-                |(x, y), b| if b == b'0' { (x + 1, y) } else { (x, y + 1) },
-            );
-
-        let s = set_scrubber
-            .iter()
-            .map(|l| l.as_bytes()[pos])
-            .fold(
-                (0, 0),
-                |(x, y), b| if b == b'0' { (x + 1, y) } else { (x, y + 1) },
-            );
+        let g = count_bits(&set_generator, pos);
+        let s = count_bits(&set_scrubber, pos);
 
         let g_common = if g.1 < g.0 { b'0' } else { b'1' };
         let s_common = if s.1 < s.0 { b'1' } else { b'0' };
@@ -59,15 +55,8 @@ pub fn part2(lines: &[String]) -> usize {
         }
     }
 
-    let g_num = set_generator[0]
-        .bytes()
-        .fold(0, |num, d| num * 2 + if d == b'1' { 1 } else { 0 });
-
-    let s_num = set_scrubber[0]
-        .bytes()
-        .fold(0, |num, d| num * 2 + if d == b'1' { 1 } else { 0 });
-
-    g_num * s_num
+    usize::from_str_radix(set_generator[0], 2).unwrap()
+        * usize::from_str_radix(set_scrubber[0], 2).unwrap()
 }
 
 #[cfg(test)]
