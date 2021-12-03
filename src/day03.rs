@@ -32,11 +32,10 @@ pub fn part1(lines: &[String]) -> usize {
 
 #[aoc(day3, part2)]
 pub fn part2(lines: &[String]) -> usize {
-    let mut set_generator: HashSet<&str> = lines.iter().map(|s| s.as_ref()).collect();
-    let mut set_scrubber: HashSet<&str> = lines.iter().map(|s| s.as_ref()).collect();
+    let mut set_generator: HashSet<_> = lines.iter().collect();
+    let mut set_scrubber: HashSet<_> = lines.iter().collect();
 
-    let mut pos = 0;
-    while pos < lines[0].len() {
+    for pos in 0..lines[0].len() {
         let g = set_generator
             .iter()
             .map(|l| l.as_bytes()[pos])
@@ -54,7 +53,7 @@ pub fn part2(lines: &[String]) -> usize {
             );
 
         let g_common = if g.1 < g.0 { b'0' } else { b'1' };
-        let s_common = if s.0 <= s.1 { b'0' } else { b'1' };
+        let s_common = if s.1 < s.0 { b'1' } else { b'0' };
 
         if set_generator.len() > 1 {
             set_generator.retain(|l| l.as_bytes()[pos] == g_common);
@@ -62,8 +61,6 @@ pub fn part2(lines: &[String]) -> usize {
         if set_scrubber.len() > 1 {
             set_scrubber.retain(|l| l.as_bytes()[pos] == s_common);
         }
-
-        pos += 1;
     }
 
     let g_num = set_generator
