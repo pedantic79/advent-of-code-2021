@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use aoc_runner_derive::{aoc, aoc_generator};
 
 #[aoc_generator(day3)]
@@ -30,8 +28,8 @@ pub fn part1(lines: &[String]) -> usize {
 
 #[aoc(day3, part2)]
 pub fn part2(lines: &[String]) -> usize {
-    let mut set_generator: HashSet<_> = lines.iter().collect();
-    let mut set_scrubber: HashSet<_> = lines.iter().collect();
+    let mut set_generator: Vec<_> = lines.iter().collect();
+    let mut set_scrubber: Vec<_> = lines.iter().collect();
 
     for pos in 0..lines[0].len() {
         let g = set_generator
@@ -61,17 +59,11 @@ pub fn part2(lines: &[String]) -> usize {
         }
     }
 
-    let g_num = set_generator
-        .iter()
-        .next()
-        .unwrap()
+    let g_num = set_generator[0]
         .bytes()
         .fold(0, |num, d| num * 2 + if d == b'1' { 1 } else { 0 });
 
-    let s_num = set_scrubber
-        .iter()
-        .next()
-        .unwrap()
+    let s_num = set_scrubber[0]
         .bytes()
         .fold(0, |num, d| num * 2 + if d == b'1' { 1 } else { 0 });
 
