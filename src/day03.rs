@@ -37,29 +37,24 @@ pub fn part2(lines: &[String]) -> usize {
 
     let mut pos = 0;
     while pos < lines[0].len() {
-        let g_0 = set_generator
+        let g = set_generator
             .iter()
             .map(|l| l.as_bytes()[pos])
-            .filter(|b| *b == b'0')
-            .count();
-        let g_1 = set_generator
-            .iter()
-            .map(|l| l.as_bytes()[pos])
-            .filter(|b| *b == b'1')
-            .count();
-        let s_0 = set_scrubber
-            .iter()
-            .map(|l| l.as_bytes()[pos])
-            .filter(|b| *b == b'0')
-            .count();
-        let s_1 = set_scrubber
-            .iter()
-            .map(|l| l.as_bytes()[pos])
-            .filter(|b| *b == b'1')
-            .count();
+            .fold(
+                (0, 0),
+                |(x, y), b| if b == b'0' { (x + 1, y) } else { (x, y + 1) },
+            );
 
-        let g_common = if g_1 < g_0 { b'0' } else { b'1' };
-        let s_common = if s_0 <= s_1 { b'0' } else { b'1' };
+        let s = set_scrubber
+            .iter()
+            .map(|l| l.as_bytes()[pos])
+            .fold(
+                (0, 0),
+                |(x, y), b| if b == b'0' { (x + 1, y) } else { (x, y + 1) },
+            );
+
+        let g_common = if g.1 < g.0 { b'0' } else { b'1' };
+        let s_common = if s.0 <= s.1 { b'0' } else { b'1' };
 
         if set_generator.len() > 1 {
             set_generator.retain(|l| l.as_bytes()[pos] == g_common);
@@ -71,18 +66,19 @@ pub fn part2(lines: &[String]) -> usize {
         pos += 1;
     }
 
-    let g = set_generator.iter().next().unwrap();
-    let s = set_scrubber.iter().next().unwrap();
+    let g_num = set_generator
+        .iter()
+        .next()
+        .unwrap()
+        .bytes()
+        .fold(0, |num, d| num * 2 + if d == b'1' { 1 } else { 0 });
 
-    let mut g_num = 0;
-    for d in g.bytes() {
-        g_num = g_num * 2 + if d == b'1' { 1 } else { 0 }
-    }
-
-    let mut s_num = 0;
-    for d in s.bytes() {
-        s_num = s_num * 2 + if d == b'1' { 1 } else { 0 }
-    }
+    let s_num = set_scrubber
+        .iter()
+        .next()
+        .unwrap()
+        .bytes()
+        .fold(0, |num, d| num * 2 + if d == b'1' { 1 } else { 0 });
 
     g_num * s_num
 }
