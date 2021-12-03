@@ -1,7 +1,4 @@
-use std::{
-    cmp::Ordering::{Equal, Greater, Less},
-    collections::HashSet,
-};
+use std::collections::HashSet;
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
@@ -61,17 +58,8 @@ pub fn part2(lines: &[String]) -> usize {
             .filter(|b| *b == b'1')
             .count();
 
-        let g_common = match g_1.cmp(&g_0) {
-            Less => b'0',
-            Equal => b'1',
-            Greater => b'1',
-        };
-
-        let s_common = match s_0.cmp(&s_1) {
-            Less => b'0',
-            Equal => b'0',
-            Greater => b'1',
-        };
+        let g_common = if g_1 < g_0 { b'0' } else { b'1' };
+        let s_common = if s_0 <= s_1 { b'0' } else { b'1' };
 
         if set_generator.len() > 1 {
             set_generator.retain(|l| l.as_bytes()[pos] == g_common);
