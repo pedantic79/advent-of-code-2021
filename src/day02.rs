@@ -1,26 +1,45 @@
+use std::str::FromStr;
+
 use aoc_runner_derive::{aoc, aoc_generator};
 
-#[aoc_generator(day2)]
-pub fn generator(input: &str) -> Vec<(u8, i32)> {
-    input
-        .lines()
-        .map(|line| {
-            let (dir, amount) = line.split_once(' ').unwrap();
-            let amount: i32 = amount.parse().unwrap();
-            (dir.as_bytes()[0], amount)
+type Scalar = i32;
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Direction {
+    Forward(Scalar),
+    Down(Scalar),
+    Up(Scalar),
+}
+
+impl FromStr for Direction {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (dir, amount) = s.split_once(' ').ok_or("split error")?;
+        let amount = amount.parse().map_err(|_| "parse error")?;
+
+        Ok(match dir {
+            "forward" => Direction::Forward(amount),
+            "down" => Direction::Down(amount),
+            "up" => Direction::Up(amount),
+            _ => return Err("invalid direction"),
         })
-        .collect()
+    }
+}
+
+#[aoc_generator(day2)]
+pub fn generator(input: &str) -> Vec<Direction> {
+    input.lines().map(|line| line.parse().unwrap()).collect()
 }
 
 #[aoc(day2, part1)]
-pub fn part1(inputs: &[(u8, i32)]) -> i32 {
+pub fn part1(inputs: &[Direction]) -> Scalar {
     let (mut depth, mut hor) = (0, 0);
-    for (cmd, amount) in inputs {
-        match cmd {
-            b'f' => hor += amount,
-            b'd' => depth += amount,
-            b'u' => depth -= amount,
-            _ => unreachable!(),
+    for dir in inputs {
+        match dir {
+            Direction::Forward(amount) => hor += amount,
+            Direction::Down(amount) => depth += amount,
+            Direction::Up(amount) => depth -= amount,
         }
     }
 
@@ -28,17 +47,16 @@ pub fn part1(inputs: &[(u8, i32)]) -> i32 {
 }
 
 #[aoc(day2, part2)]
-pub fn part2(inputs: &[(u8, i32)]) -> i32 {
+pub fn part2(inputs: &[Direction]) -> Scalar {
     let (mut depth, mut hor, mut aim) = (0, 0, 0);
-    for (cmd, amount) in inputs {
-        match cmd {
-            b'f' => {
+    for dir in inputs {
+        match dir {
+            Direction::Forward(amount) => {
                 hor += amount;
                 depth += aim * amount;
             }
-            b'd' => aim += amount,
-            b'u' => aim -= amount,
-            _ => unreachable!(),
+            Direction::Down(amount) => aim += amount,
+            Direction::Up(amount) => aim -= amount,
         }
     }
 
@@ -59,17 +77,11 @@ forward 2";
     #[test]
     pub fn test_input() {
         // println!("{:?}", generator(SAMPLE));
+        use super::Direction::*;
 
         assert_eq!(
             generator(SAMPLE),
-            vec![
-                (b'f', 5),
-                (b'd', 5),
-                (b'f', 8),
-                (b'u', 3),
-                (b'd', 8),
-                (b'f', 2)
-            ]
+            vec![Forward(5), Down(5), Forward(8), Up(3), Down(8), Forward(2)]
         );
     }
     #[test]
