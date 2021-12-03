@@ -53,6 +53,10 @@ pub fn part2(lines: &[String]) -> usize {
         if set_scrubber.len() > 1 {
             set_scrubber.retain(|l| l.as_bytes()[pos] == s_common);
         }
+
+        if set_generator.len() == 1 && set_scrubber.len() == 1 {
+            break;
+        }
     }
 
     usize::from_str_radix(set_generator[0], 2).unwrap()
