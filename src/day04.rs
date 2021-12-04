@@ -1,50 +1,44 @@
-use std::str::FromStr;
+use std::{convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
 #[derive(Debug, PartialEq)]
-pub struct Object {
-    draw: Vec<usize>,
+pub struct Bingo {
+    draw: Vec<u8>,
     boards: Vec<Board>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Board {
-    state: [[bool; 5]; 5],
-    data: Vec<Vec<usize>>,
+    data: Vec<Vec<u8>>,
 }
 
 impl FromStr for Board {
-    type Err = &'static str;
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let data = s
             .lines()
-            .map(|x| {
-                x.split(' ')
-                    .filter_map(|n| n.parse::<usize>().ok())
-                    .collect()
-            })
+            .map(|x| x.split(' ').filter_map(|n| n.parse().ok()).collect())
             .collect();
 
-        Ok(Self {
-            state: [[false; 5]; 5],
-            data,
-        })
+        Ok(Self { data })
     }
 }
 
 impl Board {
     fn check_bingo(&self) -> bool {
-        self.state.iter().any(|row| row.iter().all(|&cell| cell))
-            || (0..5).any(|col_num| self.state.iter().all(|row| row[col_num]))
+        self.data
+            .iter()
+            .any(|row| row.iter().all(|&cell| cell == 255))
+            || (0..5).any(|col_num| self.data.iter().all(|row| row[col_num] == 255))
     }
 
-    fn set_num(&mut self, num: usize) -> bool {
-        for r in 0..5 {
-            for c in 0..5 {
+    fn set_num(&mut self, num: u8) -> bool {
+        for r in 0..self.data.len() {
+            for c in 0..self.data[r].len() {
                 if self.data[r][c] == num {
-                    self.state[r][c] = true;
+                    self.data[r][c] = 255;
                     return true;
                 }
             }
@@ -55,10 +49,10 @@ impl Board {
 
     fn score(&self) -> usize {
         let mut total = 0;
-        for r in 0..5 {
-            for c in 0..5 {
-                if !self.state[r][c] {
-                    total += self.data[r][c]
+        for r in 0..self.data.len() {
+            for c in 0..self.data[r].len() {
+                if self.data[r][c] != 255 {
+                    total += usize::from(self.data[r][c])
                 }
             }
         }
@@ -68,52 +62,42 @@ impl Board {
 }
 
 #[aoc_generator(day4)]
-pub fn generator(input: &str) -> Object {
+pub fn generator(input: &str) -> Bingo {
     let mut itr = input.split("\n\n");
     let first = itr.next().unwrap();
     let draw = first.split(',').map(|x| x.parse().unwrap()).collect();
     let boards = itr.map(|s| s.parse::<Board>().unwrap()).collect();
 
-    Object { draw, boards }
+    Bingo { draw, boards }
 }
 
 #[aoc(day4, part1)]
-pub fn part1(inputs: &Object) -> usize {
+pub fn part1(inputs: &Bingo) -> usize {
     let mut boards = inputs.boards.to_vec();
     for &n in &inputs.draw {
         for b in boards.iter_mut() {
             if b.set_num(n) && b.check_bingo() {
-                return b.score() * n;
+                return b.score() * usize::from(n);
             }
         }
     }
 
-    unimplemented!()
+    unreachable!()
 }
 
 #[aoc(day4, part2)]
-pub fn part2(inputs: &Object) -> usize {
+pub fn part2(inputs: &Bingo) -> usize {
     let mut boards = inputs.boards.to_vec();
     for &n in &inputs.draw {
         if boards.len() == 1 {
             boards[0].set_num(n);
-            println!("{:?}", boards[0]);
-            return boards[0].score() * n;
+            return boards[0].score() * usize::from(n);
         }
 
-        loop {
-            let mut flag = false;
-            for (pos, b) in boards.iter_mut().enumerate() {
-                if b.set_num(n) && b.check_bingo() {
-                    boards.remove(pos);
-                    flag = true;
-                    break;
-                }
-            }
-            if !flag {
-                break;
-            }
+        for b in boards.iter_mut() {
+            b.set_num(n);
         }
+        boards.retain(|b| !b.check_bingo());
     }
 
     unreachable!()
