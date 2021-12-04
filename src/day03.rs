@@ -26,43 +26,94 @@ pub fn part1(lines: &[String]) -> usize {
     gamma * epsilon
 }
 
-fn count_bits<S: AsRef<str>>(data: &[S], pos: usize) -> (usize, usize) {
-    data.iter()
-        .map(|l| l.as_ref().as_bytes()[pos])
-        .fold(
-            (0, 0),
-            |(x, y), b| if b == b'0' { (x + 1, y) } else { (x, y + 1) },
-        )
-}
+fn solve_part2(lines: &[String], prefer: u8, dislike: u8) -> usize {
+    let mut data: Vec<_> = lines.iter().collect();
 
-#[aoc(day3, part2)]
-pub fn part2(lines: &[String]) -> usize {
-    let mut set_generator: Vec<_> = lines.iter().collect();
-    let mut set_scrubber: Vec<_> = lines.iter().collect();
+    for pos in 0.. {
+        let counts = data
+            .iter()
+            .map(|l| l.as_bytes()[pos])
+            .filter(|&x| x == b'1')
+            .count();
 
-    for pos in 0..lines[0].len() {
-        let g = count_bits(&set_generator, pos);
-        let s = count_bits(&set_scrubber, pos);
+        let common = if counts * 2 < data.len() {
+            prefer
+        } else {
+            dislike
+        };
 
-        let g_common = if g.1 < g.0 { b'0' } else { b'1' };
-        let s_common = if s.1 < s.0 { b'1' } else { b'0' };
-
-        if set_generator.len() > 1 {
-            set_generator.retain(|l| l.as_bytes()[pos] == g_common);
-        }
-        if set_scrubber.len() > 1 {
-            set_scrubber.retain(|l| l.as_bytes()[pos] == s_common);
-        }
-
-        if set_generator.len() == 1 && set_scrubber.len() == 1 {
+        data.retain(|l| l.as_bytes()[pos] == common);
+        if data.len() == 1 {
             break;
         }
     }
 
-    usize::from_str_radix(set_generator[0], 2).unwrap()
-        * usize::from_str_radix(set_scrubber[0], 2).unwrap()
+    usize::from_str_radix(data[0], 2).unwrap()
 }
 
+#[aoc(day3, part2)]
+pub fn part2(lines: &[String]) -> usize {
+    solve_part2(lines, b'1', b'0') * solve_part2(lines, b'0', b'1')
+}
+
+// #[aoc_generator(day3, part1, Int)]
+// #[aoc_generator(day3, part2, Int)]
+// pub fn generator_int(input: &str) -> Vec<u16> {
+//     input
+//         .lines()
+//         .map(|s| u16::from_str_radix(s, 2).unwrap())
+//         .collect::<Vec<_>>()
+// }
+
+// #[aoc(day3, part1, Int)]
+// pub fn part1_int(nums: &[u16]) -> usize {
+//     let threshold = nums.len() / 2;
+
+//     let mut gamma = 0;
+//     let mut epsilon = 0;
+
+//     for n in 0.. {
+//         let count = nums.iter().filter(|&&x| x >> n & 0b1 > 0).count();
+
+//         if count == 0 {
+//             break;
+//         }
+//         let (dx, de) = if count > threshold { (1, 0) } else { (0, 1) };
+//         gamma |= dx << n;
+//         epsilon |= de << n;
+//     }
+
+//     gamma * epsilon
+// }
+
+// fn solve_part2_int(lines: &[u16], prefer: u16, dislike: u16) -> usize {
+//     let mut data: Vec<_> = lines.iter().copied().collect();
+
+//     for pos in (0..u16::BITS).rev() {
+//         let mask = 1 << pos;
+//         let counts = data.iter().filter(|&&n| n & mask > 0).count();
+//         if counts == 0 {
+//             continue;
+//         }
+//         let common = if counts * 2 < data.len() {
+//             prefer
+//         } else {
+//             dislike
+//         };
+
+//         data.retain(|&n| (n & mask) >> pos == common);
+//         if data.len() == 1 {
+//             break;
+//         }
+//     }
+
+//     usize::from(data[0])
+// }
+
+// #[aoc(day3, part2, Int)]
+// pub fn part2_int(nums: &[u16]) -> usize {
+//     solve_part2_int(nums, 1, 0) * solve_part2_int(nums, 0, 1)
+// }
 #[cfg(test)]
 mod tests {
     use super::*;
