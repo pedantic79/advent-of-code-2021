@@ -10,17 +10,21 @@ pub struct Bingo {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Board {
-    data: Vec<Vec<u8>>,
+    data: [[Option<u8>; 5]; 5],
 }
 
 impl FromStr for Board {
-    type Err = Infallible;
+    type Err = Infallible; // Bad. We're going to unwrap, to catch errors rather than trying to handle them.
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let data = s
-            .lines()
-            .map(|x| x.split(' ').filter_map(|n| n.parse().ok()).collect())
-            .collect();
+        let mut data = [[None; 5]; 5];
+
+        s.lines().enumerate().for_each(|(row, x)| {
+            x.split(' ')
+                .filter_map(|nstr| nstr.parse().ok())
+                .enumerate()
+                .for_each(|(col, n)| data[row][col] = Some(n));
+        });
 
         Ok(Self { data })
     }
@@ -30,34 +34,27 @@ impl Board {
     fn check_bingo(&self) -> bool {
         self.data
             .iter()
-            .any(|row| row.iter().all(|&cell| cell == 255))
-            || (0..5).any(|col_num| self.data.iter().all(|row| row[col_num] == 255))
+            .any(|row| row.iter().all(|&cell| cell.is_none()))
+            || (0..self.data.len())
+                .any(|col_num| self.data.iter().all(|row| row[col_num].is_none()))
     }
 
     fn set_num(&mut self, num: u8) -> bool {
-        for r in 0..self.data.len() {
-            for c in 0..self.data[r].len() {
-                if self.data[r][c] == num {
-                    self.data[r][c] = 255;
-                    return true;
-                }
-            }
-        }
-
-        false
+        self.data
+            .iter_mut()
+            .flat_map(|row| row.iter_mut())
+            .find(|x| x == &&Some(num))
+            .map(|o| *o = None)
+            .is_some()
     }
 
     fn score(&self) -> usize {
-        let mut total = 0;
-        for r in 0..self.data.len() {
-            for c in 0..self.data[r].len() {
-                if self.data[r][c] != 255 {
-                    total += usize::from(self.data[r][c])
-                }
-            }
-        }
-
-        total
+        self.data
+            .iter()
+            .flat_map(|row| row.iter())
+            .filter_map(|&cell| cell)
+            .map(usize::from)
+            .sum()
     }
 }
 
@@ -89,15 +86,17 @@ pub fn part1(inputs: &Bingo) -> usize {
 pub fn part2(inputs: &Bingo) -> usize {
     let mut boards = inputs.boards.to_vec();
     for &n in &inputs.draw {
-        if boards.len() == 1 {
-            boards[0].set_num(n);
-            return boards[0].score() * usize::from(n);
-        }
-
         for b in boards.iter_mut() {
             b.set_num(n);
         }
-        boards.retain(|b| !b.check_bingo());
+
+        if boards.len() > 1 {
+            boards.retain(|b| !b.check_bingo());
+        } else {
+            // we seem to be able to skip this bingo check
+            // if boards[0].check_bingo()
+            return boards[0].score() * usize::from(n);
+        }
     }
 
     unreachable!()
