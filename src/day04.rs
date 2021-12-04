@@ -4,13 +4,17 @@ use aoc_runner_derive::{aoc, aoc_generator};
 
 #[derive(Debug, PartialEq)]
 pub struct Bingo {
-    draw: Vec<u8>,
+    draw: Vec<usize>,
     boards: Vec<Board>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Board {
     data: [[Option<u8>; 5]; 5],
+    rot: [[Option<u8>; 5]; 5],
+    index: [Option<(usize, usize)>; 100],
+    score: usize,
+    winner: bool,
 }
 
 impl FromStr for Board {
@@ -18,43 +22,59 @@ impl FromStr for Board {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut data = [[None; 5]; 5];
+        let mut index = [None; 100];
+        let mut score = 0;
 
         s.lines().enumerate().for_each(|(row, x)| {
             x.split(' ')
-                .filter_map(|nstr| nstr.parse().ok())
+                .filter_map(|nstr| nstr.parse::<u8>().ok())
                 .enumerate()
-                .for_each(|(col, n)| data[row][col] = Some(n));
+                .for_each(|(col, n)| {
+                    index[usize::from(n)] = Some((row, col));
+                    data[row][col] = Some(n);
+                    score += usize::from(n);
+                });
         });
 
-        Ok(Self { data })
+        let mut rot = data;
+        rot.rotate_right(2);
+
+        Ok(Self {
+            data,
+            rot,
+            index,
+            score,
+            winner: false,
+        })
     }
 }
 
 impl Board {
-    fn check_bingo(&self) -> bool {
-        self.data
+    fn check_bingo(&mut self) -> bool {
+        if self
+            .data
             .iter()
             .any(|row| row.iter().all(|&cell| cell.is_none()))
-            || (0..self.data.len())
-                .any(|col_num| self.data.iter().all(|row| row[col_num].is_none()))
+            || self
+                .rot
+                .iter()
+                .any(|row| row.iter().all(|&cell| cell.is_none()))
+        {
+            self.winner = true;
+        }
+
+        self.winner
     }
 
-    fn set_num(&mut self, num: u8) -> bool {
-        self.data
-            .iter_mut()
-            .flat_map(|row| row.iter_mut())
-            .find(|x| x == &&Some(num))
-            .map(|o| *o = None)
-            .is_some()
-    }
-
-    fn score(&self) -> usize {
-        self.data
-            .iter()
-            .flat_map(|row| row.iter())
-            .filter_map(|&cell| cell)
-            .map(usize::from)
-            .sum()
+    fn set_num(&mut self, num: usize) -> bool {
+        if let Some((r, c)) = self.index[num] {
+            self.data[r][c] = None;
+            self.rot[c][r] = None;
+            self.score -= num;
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -74,7 +94,7 @@ pub fn part1(inputs: &Bingo) -> usize {
     for &n in &inputs.draw {
         for b in boards.iter_mut() {
             if b.set_num(n) && b.check_bingo() {
-                return b.score() * usize::from(n);
+                return b.score * n;
             }
         }
     }
@@ -85,17 +105,17 @@ pub fn part1(inputs: &Bingo) -> usize {
 #[aoc(day4, part2)]
 pub fn part2(inputs: &Bingo) -> usize {
     let mut boards = inputs.boards.to_vec();
-    for &n in &inputs.draw {
-        for b in boards.iter_mut() {
-            b.set_num(n);
-        }
+    let mut len = boards.len();
 
-        if boards.len() > 1 {
-            boards.retain(|b| !b.check_bingo());
-        } else {
-            // we seem to be able to skip this bingo check
-            // if boards[0].check_bingo()
-            return boards[0].score() * usize::from(n);
+    for &n in &inputs.draw {
+        for b in boards.iter_mut().filter(|b| !b.winner) {
+            if b.set_num(n) && b.check_bingo() {
+                len -= 1;
+            }
+
+            if len == 0 {
+                return b.score * n;
+            }
         }
     }
 
