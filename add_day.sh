@@ -2,7 +2,7 @@
 
 NUM=$(printf "%02d" "$1")
 
-if [ -d "src/day$NUM.rs" ]; then
+if [ -f "src/day$NUM.rs" ]; then
     echo "day$NUM already exists"
     exit 1
 fi
