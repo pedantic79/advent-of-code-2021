@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use aoc_runner_derive::{aoc, aoc_generator};
 
 use crate::utils::{dec, inc};
@@ -64,34 +62,41 @@ pub fn generator(input: &str) -> Vec<Line> {
         .collect()
 }
 
-fn solve(inputs: &[Line]) -> HashMap<(usize, usize), usize> {
-    let mut map = HashMap::new();
+fn solve(inputs: &[Line]) -> (Vec<[u8; 1000]>, usize) {
+    let mut map = vec![[0; 1000]; 1000];
+    let mut count = 0;
 
     for l in inputs.iter().filter(|x| x.for_part1()) {
         for coord in l.points_part1() {
-            *map.entry(coord).or_insert(0) += 1;
+            map[coord.0][coord.1] += 1;
+            if map[coord.0][coord.1] == 2 {
+                count += 1;
+            }
         }
     }
 
-    map
+    (map, count)
 }
 
 #[aoc(day5, part1)]
 pub fn part1(inputs: &[Line]) -> usize {
-    solve(inputs).values().filter(|x| **x > 1).count()
+    solve(inputs).1
 }
 
 #[aoc(day5, part2)]
 pub fn part2(inputs: &[Line]) -> usize {
-    let mut map = solve(inputs);
+    let (mut map, mut count) = solve(inputs);
 
     for l in inputs.iter().filter(|x| !x.for_part1()) {
         for coord in l.points_part2() {
-            *map.entry(coord).or_insert(0) += 1;
+            map[coord.0][coord.1] += 1;
+            if map[coord.0][coord.1] == 2 {
+                count += 1;
+            }
         }
     }
 
-    map.values().filter(|x| **x > 1).count()
+    count
 }
 
 #[cfg(test)]
@@ -116,22 +121,33 @@ mod tests {
 
     #[test]
     pub fn test_diagonal() {
+        fn sorted_equal<T>(mut a: Vec<T>, mut b: Vec<T>)
+        where
+            T: Ord + std::fmt::Debug,
+        {
+            a.sort_unstable();
+            b.sort_unstable();
+
+            assert_eq!(a, b)
+        }
+
         let t = Line {
             start: (1, 1),
             end: (3, 3),
         };
-        assert_eq!(
+
+        sorted_equal(
             t.points_part2().collect::<Vec<_>>(),
-            vec![(1, 1), (2, 2), (3, 3)]
+            vec![(1, 1), (2, 2), (3, 3)],
         );
 
         let t = Line {
             start: (9, 7),
             end: (7, 9),
         };
-        assert_eq!(
+        sorted_equal(
             t.points_part2().collect::<Vec<_>>(),
-            vec![(9, 7), (8, 8), (7, 9)]
+            vec![(9, 7), (8, 8), (7, 9)],
         );
     }
 
