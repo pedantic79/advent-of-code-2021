@@ -126,3 +126,11 @@ where
 
     sum % product
 }
+
+pub fn inc<T: MyInteger>(n: &mut T) {
+    *n = n.clone() + T::one();
+}
+
+pub fn dec<T: MyInteger>(n: &mut T) {
+    *n = n.clone() - T::one();
+}

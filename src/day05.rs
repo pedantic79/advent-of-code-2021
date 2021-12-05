@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
+use crate::utils::{dec, inc};
+
 #[derive(Debug, PartialEq)]
 pub struct Line {
     start: (usize, usize),
@@ -23,32 +25,23 @@ impl Line {
         (startr..=stopr).flat_map(move |r| (startc..=stopc).map(move |c| (r, c)))
     }
 
-    fn points_part2(&self) -> Vec<(usize, usize)> {
-        let mut ret = Vec::new();
-
-        let r_inc = self.start.0 < self.end.0;
-        let c_inc = self.start.1 < self.end.1;
-
+    fn points_part2(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        let r_inc = if self.start.0 < self.end.0 { inc } else { dec };
+        let c_inc = if self.start.1 < self.end.1 { inc } else { dec };
         let (mut r, mut c) = self.start;
-        ret.push((r, c));
 
-        while (r, c) != self.end {
-            if r_inc {
-                r += 1;
+        std::iter::from_fn(move || {
+            let res = (r, c);
+
+            if res == self.end {
+                None
             } else {
-                r -= 1;
+                r_inc(&mut r);
+                c_inc(&mut c);
+                Some(res)
             }
-
-            if c_inc {
-                c += 1;
-            } else {
-                c -= 1;
-            }
-
-            ret.push((r, c));
-        }
-
-        ret
+        })
+        .chain(std::iter::once(self.end))
     }
 }
 
@@ -71,8 +64,7 @@ pub fn generator(input: &str) -> Vec<Line> {
         .collect()
 }
 
-#[aoc(day5, part1)]
-pub fn part1(inputs: &[Line]) -> usize {
+fn solve(inputs: &[Line]) -> HashMap<(usize, usize), usize> {
     let mut map = HashMap::new();
 
     for l in inputs.iter().filter(|x| x.for_part1()) {
@@ -81,22 +73,19 @@ pub fn part1(inputs: &[Line]) -> usize {
         }
     }
 
-    map.values().filter(|x| **x > 1).count()
+    map
+}
+
+#[aoc(day5, part1)]
+pub fn part1(inputs: &[Line]) -> usize {
+    solve(inputs).values().filter(|x| **x > 1).count()
 }
 
 #[aoc(day5, part2)]
 pub fn part2(inputs: &[Line]) -> usize {
-    let mut map = HashMap::new();
-
-    for l in inputs.iter().filter(|x| x.for_part1()) {
-        // println!("{:?}", l);
-        for coord in l.points_part1() {
-            *map.entry(coord).or_insert(0) += 1;
-        }
-    }
+    let mut map = solve(inputs);
 
     for l in inputs.iter().filter(|x| !x.for_part1()) {
-        // println!("{:?}", l);
         for coord in l.points_part2() {
             *map.entry(coord).or_insert(0) += 1;
         }
@@ -131,13 +120,19 @@ mod tests {
             start: (1, 1),
             end: (3, 3),
         };
-        assert_eq!(t.points_part2(), vec![(1, 1), (2, 2), (3, 3)]);
+        assert_eq!(
+            t.points_part2().collect::<Vec<_>>(),
+            vec![(1, 1), (2, 2), (3, 3)]
+        );
 
         let t = Line {
             start: (9, 7),
             end: (7, 9),
         };
-        assert_eq!(t.points_part2(), vec![(9, 7), (8, 8), (7, 9)]);
+        assert_eq!(
+            t.points_part2().collect::<Vec<_>>(),
+            vec![(9, 7), (8, 8), (7, 9)]
+        );
     }
 
     #[test]
