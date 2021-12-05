@@ -10,8 +10,8 @@ pub struct Bingo {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Board {
-    data: [[Option<u8>; 5]; 5],
-    rot: [[Option<u8>; 5]; 5],
+    row: [[Option<u8>; 5]; 5],
+    col: [[Option<u8>; 5]; 5],
     index: [Option<(usize, usize)>; 100],
     score: usize,
     winner: bool,
@@ -21,27 +21,27 @@ impl FromStr for Board {
     type Err = Infallible; // Bad. We're going to unwrap, to catch errors rather than trying to handle them.
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut data = [[None; 5]; 5];
+        let mut row = [[None; 5]; 5];
+        let mut col = [[None; 5]; 5];
+
         let mut index = [None; 100];
         let mut score = 0;
 
-        s.lines().enumerate().for_each(|(row, x)| {
+        s.lines().enumerate().for_each(|(r, x)| {
             x.split(' ')
                 .filter_map(|nstr| nstr.parse::<u8>().ok())
                 .enumerate()
-                .for_each(|(col, n)| {
-                    index[usize::from(n)] = Some((row, col));
-                    data[row][col] = Some(n);
+                .for_each(|(c, n)| {
+                    index[usize::from(n)] = Some((r, c));
+                    row[r][c] = Some(n);
+                    col[c][r] = Some(n);
                     score += usize::from(n);
                 });
         });
 
-        let mut rot = data;
-        rot.rotate_right(2);
-
         Ok(Self {
-            data,
-            rot,
+            row,
+            col,
             index,
             score,
             winner: false,
@@ -50,15 +50,9 @@ impl FromStr for Board {
 }
 
 impl Board {
-    fn check_bingo(&mut self) -> bool {
-        if self
-            .data
-            .iter()
-            .any(|row| row.iter().all(|&cell| cell.is_none()))
-            || self
-                .rot
-                .iter()
-                .any(|row| row.iter().all(|&cell| cell.is_none()))
+    fn check_bingo(&mut self, r: usize, c: usize) -> bool {
+        if self.row[r].iter().all(|&cell| cell.is_none())
+            || self.col[c].iter().all(|&cell| cell.is_none())
         {
             self.winner = true;
         }
@@ -68,10 +62,10 @@ impl Board {
 
     fn set_num(&mut self, num: usize) -> bool {
         if let Some((r, c)) = self.index[num] {
-            self.data[r][c] = None;
-            self.rot[c][r] = None;
+            self.row[r][c] = None;
+            self.col[c][r] = None;
             self.score -= num;
-            true
+            self.check_bingo(r, c)
         } else {
             false
         }
@@ -93,7 +87,7 @@ pub fn part1(inputs: &Bingo) -> usize {
     let mut boards = inputs.boards.to_vec();
     for &n in &inputs.draw {
         for b in boards.iter_mut() {
-            if b.set_num(n) && b.check_bingo() {
+            if b.set_num(n) {
                 return b.score * n;
             }
         }
@@ -109,12 +103,12 @@ pub fn part2(inputs: &Bingo) -> usize {
 
     for &n in &inputs.draw {
         for b in boards.iter_mut().filter(|b| !b.winner) {
-            if b.set_num(n) && b.check_bingo() {
+            if b.set_num(n) {
                 len -= 1;
-            }
 
-            if len == 0 {
-                return b.score * n;
+                if len == 0 {
+                    return b.score * n;
+                }
             }
         }
     }
