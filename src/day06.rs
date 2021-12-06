@@ -1,38 +1,34 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 
-fn solve<const N: usize>(input: &[usize]) -> usize {
-    let mut fish = [0; 9];
-
-    for &f in input {
-        fish[f] += 1;
-    }
-
-    for _ in 0..N {
-        let mut new_fish = [0; 9];
-
-        new_fish[..8].copy_from_slice(&fish[1..9]);
-        new_fish[6] += fish[0];
-        new_fish[8] += fish[0];
-
-        fish = new_fish;
+fn solve<const N: usize>(mut fish: [usize; 9]) -> usize {
+    for x in 0..N {
+        let base = x % 9;
+        let new_fish = fish[base];
+        fish[(base + 7) % 9] += new_fish;
     }
 
     fish.iter().sum()
 }
 
 #[aoc_generator(day6)]
-pub fn generator(input: &str) -> Vec<usize> {
-    input.split(',').map(|x| x.parse().unwrap()).collect()
+pub fn generator(input: &str) -> [usize; 9] {
+    input
+        .split(',')
+        .map(|x| x.parse::<usize>().unwrap())
+        .fold([0; 9], |mut a, n| {
+            a[n] += 1;
+            a
+        })
 }
 
 #[aoc(day6, part1)]
-pub fn part1(inputs: &[usize]) -> usize {
-    solve::<80>(inputs)
+pub fn part1(inputs: &[usize; 9]) -> usize {
+    solve::<80>(*inputs)
 }
 
 #[aoc(day6, part2)]
-pub fn part2(inputs: &[usize]) -> usize {
-    solve::<256>(inputs)
+pub fn part2(inputs: &[usize; 9]) -> usize {
+    solve::<256>(*inputs)
 }
 
 #[cfg(test)]
