@@ -41,7 +41,7 @@ mod tests {
     pub fn test_input() {
         println!("{:?}", generator(SAMPLE));
 
-        // assert_eq!(generator(SAMPLE), Object());
+        assert_eq!(generator(SAMPLE), [0, 1, 1, 2, 1, 0, 0, 0, 0]);
     }
 
     #[test]
