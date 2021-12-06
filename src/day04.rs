@@ -10,15 +10,17 @@ pub struct Bingo {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct Board {
-    row: [[Option<u8>; 5]; 5],
-    col: [[Option<u8>; 5]; 5],
-    index: [Option<(usize, usize)>; 100],
-    score: usize,
-    winner: bool,
+    row: [[Option<u8>; 5]; 5],            // row major version of the board
+    col: [[Option<u8>; 5]; 5],            // column major version of the board
+    index: [Option<(usize, usize)>; 100], // lookup table for the (r,c) location
+    score: usize,                         // keep track of the total unmarked score
+    winner: bool,                         // keep track if we've won
 }
 
 impl FromStr for Board {
-    type Err = Infallible; // Bad. We're going to unwrap, to catch errors rather than trying to handle them.
+    // Technically bad, we should make sure that there are the correct number of numbers, but we silently ignore them
+    // so we can handle the extra spaces.
+    type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut row = [[None; 5]; 5];
@@ -32,6 +34,7 @@ impl FromStr for Board {
                 .filter_map(|nstr| nstr.parse::<u8>().ok())
                 .enumerate()
                 .for_each(|(c, n)| {
+                    // precompute everything to save time when processing
                     index[usize::from(n)] = Some((r, c));
                     row[r][c] = Some(n);
                     col[c][r] = Some(n);
@@ -50,6 +53,7 @@ impl FromStr for Board {
 }
 
 impl Board {
+    // Pass the (r, c) to cheaply check for bingo
     fn check_bingo(&mut self, r: usize, c: usize) -> bool {
         if self.row[r].iter().all(|&cell| cell.is_none())
             || self.col[c].iter().all(|&cell| cell.is_none())
@@ -74,6 +78,8 @@ impl Board {
 
 #[aoc_generator(day4)]
 pub fn generator(input: &str) -> Bingo {
+    // Using unwrap, but that is mostly because it's easy and to fail early rather than hide it in error handling.
+    // Error handling could be improved
     let mut itr = input.split("\n\n");
     let first = itr.next().unwrap();
     let draw = first.split(',').map(|x| x.parse().unwrap()).collect();
