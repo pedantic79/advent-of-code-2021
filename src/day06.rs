@@ -1,13 +1,19 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 
-fn solve<const N: usize>(mut fish: [usize; 9]) -> usize {
-    for x in 0..N {
-        let base = x % 9;
-        let new_fish = fish[base];
-        fish[(base + 7) % 9] += new_fish;
+fn solve<const N: usize>(mut pool: [usize; 9]) -> usize {
+    const BUMP: [usize; 9] = [7, 8, 0, 1, 2, 3, 4, 5, 6];
+
+    for _ in 0..(N / 9) {
+        for (i, &j) in BUMP.iter().enumerate() {
+            pool[j] += pool[i];
+        }
     }
 
-    fish.iter().sum()
+    for g in 0..(N % 9) {
+        pool[BUMP[g]] += pool[g];
+    }
+
+    pool.iter().sum()
 }
 
 #[aoc_generator(day6)]
