@@ -1,63 +1,16 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct Fish {
-    days: usize,
-}
-
-impl Fish {
-    fn tick(&mut self) -> Option<Fish> {
-        if self.days == 0 {
-            self.days = 6;
-            Some(Fish { days: 8 })
-        } else {
-            self.days -= 1;
-
-            None
-        }
-    }
-}
-
-#[aoc_generator(day6)]
-pub fn generator(input: &str) -> Vec<Fish> {
-    input
-        .split(',')
-        .map(|x| Fish {
-            days: x.parse().unwrap(),
-        })
-        .collect()
-}
-
-#[aoc(day6, part1)]
-pub fn part1(inputs: &[Fish]) -> usize {
-    let mut inputs = inputs.to_vec();
-    for _ in 0..80 {
-        let mut temp = Vec::new();
-
-        for fish in inputs.iter_mut() {
-            if let Some(new_fish) = fish.tick() {
-                temp.push(new_fish);
-            }
-        }
-
-        inputs.extend(temp);
-    }
-
-    inputs.len()
-}
-
-#[aoc(day6, part2)]
-pub fn part2(inputs: &[Fish]) -> usize {
+fn solve<const N: usize>(input: &[usize]) -> usize {
     let mut fish = [0; 9];
 
-    for f in inputs {
-        fish[f.days] += 1;
+    for &f in input {
+        fish[f] += 1;
     }
 
-    for _ in 0..256 {
+    for _ in 0..N {
         let mut new_fish = [0; 9];
 
-        new_fish[..(9 - 1)].clone_from_slice(&fish[1..9]);
+        new_fish[..8].copy_from_slice(&fish[1..9]);
         new_fish[6] += fish[0];
         new_fish[8] += fish[0];
 
@@ -65,6 +18,21 @@ pub fn part2(inputs: &[Fish]) -> usize {
     }
 
     fish.iter().sum()
+}
+
+#[aoc_generator(day6)]
+pub fn generator(input: &str) -> Vec<usize> {
+    input.split(',').map(|x| x.parse().unwrap()).collect()
+}
+
+#[aoc(day6, part1)]
+pub fn part1(inputs: &[usize]) -> usize {
+    solve::<80>(inputs)
+}
+
+#[aoc(day6, part2)]
+pub fn part2(inputs: &[usize]) -> usize {
+    solve::<256>(inputs)
 }
 
 #[cfg(test)]
