@@ -1,4 +1,20 @@
 use aoc_runner_derive::{aoc, aoc_generator};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
+const TRI: [isize; 2048] = precalculate_triangle_seq();
+
+const fn precalculate_triangle_seq<const N: usize>() -> [isize; N] {
+    let mut res = [0; N];
+
+    let mut i = 0;
+    while i < N {
+        let j = i as isize;
+        res[i] = j * (j + 1) / 2;
+        i += 1;
+    }
+
+    res
+}
 
 #[aoc_generator(day7)]
 pub fn generator(input: &str) -> Vec<isize> {
@@ -10,6 +26,7 @@ pub fn part1(inputs: &[isize]) -> isize {
     let max = *inputs.iter().max().unwrap();
 
     (0..=max)
+        .into_par_iter()
         .map(|n| inputs.iter().map(|x| (x - n).abs()).sum())
         .min()
         .unwrap()
@@ -18,18 +35,13 @@ pub fn part1(inputs: &[isize]) -> isize {
 #[aoc(day7, part2)]
 pub fn part2(inputs: &[isize]) -> isize {
     let max = *inputs.iter().max().unwrap();
-    let sums = (0..=max)
-        .scan(0, |acc, n| {
-            *acc += n;
-            Some(*acc)
-        })
-        .collect::<Vec<_>>();
 
     (0..=max)
+        .into_par_iter()
         .map(|n| {
             inputs
                 .iter()
-                .map(|x| sums[usize::try_from((x - n).abs()).unwrap()])
+                .map(|x| TRI[(x - n).abs() as usize])
                 .sum::<isize>()
         })
         .min()
