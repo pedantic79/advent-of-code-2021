@@ -15,8 +15,6 @@ pub trait MyInteger: num::Integer + Clone + for<'a> Mul<&'a Self, Output = Self>
 
 impl<T> MyInteger for T where T: num::Integer + Clone + for<'a> Mul<&'a T, Output = T> {}
 
-impl<T: ?Sized> MinMaxIterator for T where T: Iterator {}
-
 // Based on the C++ algorithm here: https://stackoverflow.com/a/53604277/7263440
 #[inline]
 pub fn mod_inv<U>(mut a: U, mut m: U) -> U

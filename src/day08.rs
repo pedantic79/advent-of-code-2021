@@ -1,12 +1,12 @@
 use std::{convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
-use itertools::Itertools;
+// use itertools::Itertools;
 
 #[derive(Debug, PartialEq)]
 pub struct Object {
-    before: Vec<String>,
-    after: Vec<String>,
+    before: [(u8, u8); 10],
+    after: [(u8, u8); 4],
 }
 
 impl FromStr for Object {
@@ -14,78 +14,81 @@ impl FromStr for Object {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (a, b) = s.split_once(" | ").unwrap();
-        let before = a.split(' ').map(sort_chars).collect();
-        let after = b.split(' ').map(sort_chars).collect();
+
+        let before = build_array(a.split(' ').map(pack_digit));
+        let after = build_array(b.split(' ').map(pack_digit));
 
         Ok(Object { before, after })
     }
 }
 
-fn sort_chars(s: &str) -> String {
-    let mut s = s.to_string();
+fn build_array<T, I, const N: usize>(mut iter: I) -> [T; N]
+where
+    T: Default + Copy,
+    I: Iterator<Item = T>,
+{
+    let mut res = [T::default(); N];
 
-    // SAFETY: input string only contains ascii characters, so it is safe to sort them.
-    unsafe {
-        s.as_bytes_mut().sort_unstable();
-    }
-    s
-}
-
-fn find_match(s: &str) -> bool {
-    matches!(s.len(), 2 | 3 | 4 | 7)
-}
-
-const PACKED: [u8; 10] = [
-    parse_lights("abcefg"),
-    parse_lights("cf"),
-    parse_lights("acdeg"),
-    parse_lights("acdfg"),
-    parse_lights("bcdf"),
-    parse_lights("abdfg"),
-    parse_lights("abdefg"),
-    parse_lights("acf"),
-    parse_lights("abcdefg"),
-    parse_lights("abcdfg"),
-];
-
-const fn parse_lights(num: &str) -> u8 {
-    let mut r = 0;
-    let mut pos = 0;
-    let bytes = num.as_bytes();
-
-    while pos < bytes.len() {
-        r |= 1 << (bytes[pos] - b'a');
-        pos += 1;
+    // BAD... We don't know if there are enough iterator elements to fill or overfill the array.
+    for slot in res.iter_mut() {
+        *slot = iter.next().unwrap();
     }
 
-    r
+    res
 }
 
-fn permute_num(permutation: &[usize], num: &str) -> Option<usize> {
-    let num = parse_lights(num);
-    let n = permutation
+fn pack_digit(s: &str) -> (u8, u8) {
+    s.bytes()
+        .fold((0, 0), |(tot, count), c| (tot | 1 << (c - b'a'), count + 1))
+}
+
+fn find(constraints: [(u8, u8); 10], len: u8, predicate: impl Fn(&&(u8, u8)) -> bool) -> u8 {
+    constraints
         .iter()
-        .enumerate()
-        .filter(|(_, p)| num & (1 << **p) > 0)
-        .fold(0, |acc, (i, _)| acc | 1 << i);
-
-    PACKED.iter().position(|&x| x == n)
+        .filter(|x| x.1 == len)
+        .find(|x| predicate(x))
+        .unwrap()
+        .0
 }
 
-fn analyze(left: &[String]) -> Vec<usize> {
-    (0..7)
-        .permutations(7)
-        .find_map(|permutation| {
-            if left
-                .iter()
-                .all(|digit| permute_num(&permutation, digit).is_some())
-            {
-                Some(permutation)
-            } else {
-                None
-            }
-        })
-        .unwrap()
+fn analyze(constraints: [(u8, u8); 10]) -> [u8; 10] {
+    //  aaaa      2 => [1]
+    // b    c     3 => [7]
+    // b    c     4 => [4]
+    //  dddd      5 => [2, 3, 5]
+    // e    f     6 => [0, 6, 9]
+    // e    f     7 => [8]
+    //  gggg
+
+    let mut res = [0; 10];
+
+    // These are easy, 1, 4, 7, 8 all have unique number of segments
+    res[1] = find(constraints, 2, |_| true);
+    res[4] = find(constraints, 4, |_| true);
+    res[7] = find(constraints, 3, |_| true);
+    res[8] = find(constraints, 7, |_| true);
+
+    // Of the possible 5 segment numbers, only 3 share the same segments as 1
+    res[3] = find(constraints, 5, |x| x.0 & res[1] == res[1]);
+
+    // 9 is made up of the union of 4 and 7
+    let nine_mask = res[4] | res[7];
+    res[9] = find(constraints, 6, |x| x.0 & nine_mask == nine_mask);
+
+    // the middle segment is made up of intersection of 3 and Ɛ (inverse of 1), e.g. ≡
+    // and the intersection with 4 (the only number we know that has a middle segment but not top or bottom)
+    let middle = (res[3] & !res[1]) & res[4];
+
+    // 0 is the only 6 segment number without a middle
+    res[0] = find(constraints, 6, |x| x.0 & middle == 0);
+    // 6 is the remaining 6 segment number, that aren't 0 or 9.
+    res[6] = find(constraints, 6, |x| x.0 != res[0] && x.0 != res[9]);
+    // 5 xor 6 with only 1 segment
+    res[5] = find(constraints, 5, |x| (x.0 ^ res[6]).count_ones() == 1);
+    // 2 is the remaining 5 segment number that aren't 3 or 5
+    res[2] = find(constraints, 5, |x| x.0 != res[3] && x.0 != res[5]);
+
+    res
 }
 
 #[aoc_generator(day8)]
@@ -98,7 +101,7 @@ pub fn part1(inputs: &[Object]) -> usize {
     inputs
         .iter()
         .flat_map(|l| l.after.iter())
-        .filter(|x| find_match(*x))
+        .filter(|x| matches!(x.1, 2 | 3 | 4 | 7))
         // .inspect(|w| println!("**{}", w))
         .count()
 }
@@ -108,10 +111,10 @@ pub fn part2(inputs: &[Object]) -> usize {
     inputs
         .iter()
         .map(|line| {
-            let perm = analyze(&line.before);
+            let perm = analyze(line.before);
             line.after
                 .iter()
-                .map(|digit| permute_num(&perm, digit).unwrap())
+                .map(|digit| perm.iter().position(|&x| x == digit.0).unwrap())
                 .fold(0, |acc, n| acc * 10 + n)
         })
         // .inspect(|n| println!("{:?}", n))
