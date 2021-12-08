@@ -42,11 +42,11 @@ fn pack_digit(s: &str) -> (u8, u8) {
         .fold((0, 0), |(tot, count), c| (tot | 1 << (c - b'a'), count + 1))
 }
 
-fn find(constraints: [(u8, u8); 10], len: u8, predicate: impl Fn(&&(u8, u8)) -> bool) -> u8 {
+fn find(constraints: [(u8, u8); 10], len: u8, predicate: impl Fn(u8) -> bool) -> u8 {
     constraints
         .iter()
         .filter(|x| x.1 == len)
-        .find(|x| predicate(x))
+        .find(|x| predicate(x.0))
         .unwrap()
         .0
 }
@@ -69,24 +69,24 @@ fn analyze(constraints: [(u8, u8); 10]) -> [u8; 10] {
     res[8] = find(constraints, 7, |_| true);
 
     // Of the possible 5 segment numbers, only 3 share the same segments as 1
-    res[3] = find(constraints, 5, |x| x.0 & res[1] == res[1]);
+    res[3] = find(constraints, 5, |x| x & res[1] == res[1]);
 
     // 9 is made up of the union of 4 and 7
     let nine_mask = res[4] | res[7];
-    res[9] = find(constraints, 6, |x| x.0 & nine_mask == nine_mask);
+    res[9] = find(constraints, 6, |x| x & nine_mask == nine_mask);
 
-    // the middle segment is made up of intersection of 3 and Ɛ (inverse of 1), e.g. ≡
+    // the middle segment is made up of intersection of Ǝ and E (inverse of 1), e.g. ≡
     // and the intersection with 4 (the only number we know that has a middle segment but not top or bottom)
     let middle = (res[3] & !res[1]) & res[4];
 
     // 0 is the only 6 segment number without a middle
-    res[0] = find(constraints, 6, |x| x.0 & middle == 0);
+    res[0] = find(constraints, 6, |x| x & middle == 0);
     // 6 is the remaining 6 segment number, that aren't 0 or 9.
-    res[6] = find(constraints, 6, |x| x.0 != res[0] && x.0 != res[9]);
+    res[6] = find(constraints, 6, |x| x != res[0] && x != res[9]);
     // 5 xor 6 with only 1 segment
-    res[5] = find(constraints, 5, |x| (x.0 ^ res[6]).count_ones() == 1);
+    res[5] = find(constraints, 5, |x| (x ^ res[6]).count_ones() == 1);
     // 2 is the remaining 5 segment number that aren't 3 or 5
-    res[2] = find(constraints, 5, |x| x.0 != res[3] && x.0 != res[5]);
+    res[2] = find(constraints, 5, |x| x != res[3] && x != res[5]);
 
     res
 }
