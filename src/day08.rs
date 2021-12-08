@@ -22,7 +22,13 @@ impl FromStr for Object {
 }
 
 fn sort_chars(s: &str) -> String {
-    s.chars().sorted().collect()
+    let mut s = s.to_string();
+
+    // SAFETY: input string only contains ascii characters, so it is safe to sort them.
+    unsafe {
+        s.as_bytes_mut().sort_unstable();
+    }
+    s
 }
 
 fn find_match(s: &str) -> bool {
