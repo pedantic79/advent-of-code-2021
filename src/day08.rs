@@ -1,7 +1,6 @@
-use std::{convert::Infallible, str::FromStr};
+use std::{collections::HashMap, convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
-// use itertools::Itertools;
 
 #[derive(Debug, PartialEq)]
 pub struct Object {
@@ -51,7 +50,7 @@ fn find(constraints: [(u8, u8); 10], len: u8, predicate: impl Fn(u8) -> bool) ->
         .0
 }
 
-fn analyze(constraints: [(u8, u8); 10]) -> [u8; 10] {
+fn analyze(constraints: [(u8, u8); 10]) -> HashMap<u8, usize> {
     //  aaaa      2 => [1]
     // b    c     3 => [7]
     // b    c     4 => [4]
@@ -88,7 +87,7 @@ fn analyze(constraints: [(u8, u8); 10]) -> [u8; 10] {
     // 2 is the remaining 5 segment number that aren't 3 or 5
     res[2] = find(constraints, 5, |x| x != res[3] && x != res[5]);
 
-    res
+    res.into_iter().enumerate().map(|(a, b)| (b, a)).collect()
 }
 
 #[aoc_generator(day8)]
@@ -114,8 +113,8 @@ pub fn part2(inputs: &[Object]) -> usize {
             let perm = analyze(line.before);
             line.after
                 .iter()
-                .map(|digit| perm.iter().position(|&x| x == digit.0).unwrap())
-                .fold(0, |acc, n| acc * 10 + n)
+                .map(|digit| perm.get(&digit.0).unwrap())
+                .fold(0, |acc, &n| acc * 10 + n)
         })
         // .inspect(|n| println!("{:?}", n))
         .sum::<usize>()
