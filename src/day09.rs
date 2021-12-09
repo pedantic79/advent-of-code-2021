@@ -1,65 +1,60 @@
-use std::cmp::Reverse;
+use std::{cmp::Reverse, iter::from_fn};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
-#[derive(Debug, PartialEq)]
-pub struct Elevation(Vec<Vec<u8>>);
-
 #[aoc_generator(day9)]
-pub fn generator(input: &str) -> Elevation {
-    Elevation(
-        input
-            .lines()
-            .map(|l| l.chars().map(|x| x.to_digit(10).unwrap() as u8).collect())
-            .collect(),
-    )
+pub fn generator(input: &str) -> Vec<Vec<u8>> {
+    input
+        .lines()
+        .map(|l| l.chars().map(|x| x.to_digit(10).unwrap() as u8).collect())
+        .collect()
 }
 
-fn neighbors(r: usize, c: usize, r_max: usize, c_max: usize) -> Vec<(usize, usize)> {
-    let mut res = Vec::new();
-    if r > 0 {
-        // if c > 0 {
-        //     res.push((r - 1, c - 1));
-        // }
-        res.push((r - 1, c));
-        // if c + 1 < c_max {
-        //     res.push((r - 1, c + 1));
-        // }
-    }
+fn neighbors(r: usize, c: usize, r_m: usize, c_m: usize) -> impl Iterator<Item = (usize, usize)> {
+    let mut kind = 0;
 
-    if c > 0 {
-        res.push((r, c - 1));
-    }
-    // res.push((r, c));
-    if c + 1 < c_max {
-        res.push((r, c + 1));
-    }
+    from_fn(move || {
+        if kind == 0 {
+            kind += 1;
+            if r > 0 {
+                return Some((r - 1, c));
+            }
+        }
 
-    if r + 1 < r_max {
-        // if c > 0 {
-        //     res.push((r + 1, c - 1));
-        // }
-        res.push((r + 1, c));
-        // if c + 1 < c_max {
-        //     res.push((r + 1, c + 1));
-        // }
-    }
+        if kind == 1 {
+            kind += 1;
+            if c > 0 {
+                return Some((r, c - 1));
+            }
+        }
 
-    res
+        if kind == 2 {
+            kind += 1;
+            if c + 1 < c_m {
+                return Some((r, c + 1));
+            }
+        }
+
+        if kind == 3 {
+            kind += 1;
+            if r + 1 < r_m {
+                return Some((r + 1, c));
+            }
+        }
+
+        None
+    })
 }
 
 #[aoc(day9, part1)]
-pub fn part1(inputs: &Elevation) -> usize {
-    let r_max = inputs.0.len();
-    let c_max = inputs.0[0].len();
+pub fn part1(inputs: &[Vec<u8>]) -> usize {
+    let r_max = inputs.len();
+    let c_max = inputs[0].len();
     (0..r_max)
         .flat_map(|row| (0..c_max).map(move |col| (row, col)))
         .filter_map(|(r, c)| {
-            let cell = inputs.0[r][c];
-            if neighbors(r, c, r_max, c_max)
-                .into_iter()
-                .all(|(y, x)| inputs.0[y][x] > cell)
-            {
+            let cell = inputs[r][c];
+            if neighbors(r, c, r_max, c_max).all(|(y, x)| inputs[y][x] > cell) {
                 Some(usize::from(cell) + 1)
             } else {
                 None
@@ -70,32 +65,27 @@ pub fn part1(inputs: &Elevation) -> usize {
 }
 
 #[aoc(day9, part2)]
-pub fn part2(inputs: &Elevation) -> usize {
-    let r_max = inputs.0.len();
-    let c_max = inputs.0[0].len();
-    let mut v = inputs.0.clone();
+pub fn part2(inputs: &[Vec<u8>]) -> usize {
+    let r_max = inputs.len();
+    let c_max = inputs[0].len();
+    let mut v = inputs.to_vec();
     let mut areas = Vec::new();
 
     for (row, col) in (0..r_max).flat_map(|row| (0..c_max).map(move |col| (row, col))) {
-        // println!("{:?}", v);
-
         if v[row][col] < 9 {
             areas.push(find_basin(&mut v, row, col, r_max, c_max));
         }
     }
 
     areas.sort_by_key(|&x| Reverse(x));
-    // println!("{:?}", areas);
     areas[0..3].iter().product()
 }
 
 fn find_basin(v: &mut Vec<Vec<u8>>, row: usize, col: usize, r_max: usize, c_max: usize) -> usize {
-    let n = neighbors(row, col, r_max, c_max);
     let mut total = 1;
-    // println!("checking {} {} {} {:?}", v[row][col], row, col, n);
     v[row][col] = 10;
 
-    for (r, c) in n {
+    for (r, c) in neighbors(row, col, r_max, c_max) {
         if v[r][c] < 9 {
             total += find_basin(v, r, c, r_max, c_max);
         }
