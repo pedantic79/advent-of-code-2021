@@ -15,10 +15,10 @@ fn neighbors(r: usize, c: usize, r_m: usize, c_m: usize) -> impl Iterator<Item =
     [(-1, 0), (0, -1), (0, 1), (1, 0)]
         .iter()
         .filter_map(move |&(y, x)| {
-            let r_new = r.isize_add(y)?;
-            let c_new = c.isize_add(x)?;
+            let r_new = r.isize_add_clamp(y, r_m)?;
+            let c_new = c.isize_add_clamp(x, c_m)?;
 
-            Some((r_new, c_new)).filter(|_| r_new < r_m && c_new < c_m)
+            Some((r_new, c_new))
         })
 }
 
