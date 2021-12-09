@@ -1,4 +1,4 @@
-use crate::utils::IsizeAdd;
+use crate::utils::AddIsize;
 use std::cmp::Reverse;
 
 use aoc_runner_derive::{aoc, aoc_generator};
@@ -15,8 +15,8 @@ fn neighbors(r: usize, c: usize, r_m: usize, c_m: usize) -> impl Iterator<Item =
     [(-1, 0), (0, -1), (0, 1), (1, 0)]
         .iter()
         .filter_map(move |&(y, x)| {
-            let r_new = r.isize_add_clamp(y, r_m)?;
-            let c_new = c.isize_add_clamp(x, c_m)?;
+            let r_new = r.checked_add_isize_clamp(y, r_m)?;
+            let c_new = c.checked_add_isize_clamp(x, c_m)?;
 
             Some((r_new, c_new))
         })
@@ -50,7 +50,7 @@ pub fn part2(inputs: &[Vec<u8>]) -> usize {
         .map(|(row, col)| find_basin(&mut v, row, col, r_max, c_max))
         .collect();
 
-    areas.sort_by_key(|&x| Reverse(x));
+    areas.sort_unstable_by_key(|&x| Reverse(x));
     areas[0..3].iter().product()
 }
 
