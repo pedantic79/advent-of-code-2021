@@ -14,8 +14,10 @@ impl FromStr for Object {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (a, b) = s.split_once(" | ").unwrap();
 
-        let before = build_array(a.split(' ').map(pack_digit));
+        let mut before = build_array(a.split(' ').map(pack_digit));
         let after = build_array(b.split(' ').map(pack_digit));
+
+        before.sort_unstable_by_key(|f| f.1);
 
         Ok(Object { before, after })
     }
@@ -41,10 +43,25 @@ fn pack_digit(s: &str) -> (u8, u8) {
         .fold((0, 0), |(tot, count), c| (tot | 1 << (c - b'a'), count + 1))
 }
 
+fn get_range(len: u8) -> (usize, usize) {
+    // constraints are ordered
+    // [2, 3, 4, 5, 5, 5, 6, 6, 6, 7]
+    match len {
+        2 => (0, 1),
+        3 => (1, 2),
+        4 => (2, 3),
+        5 => (3, 6),
+        6 => (6, 9),
+        7 => (9, 10),
+        _ => unreachable!(),
+    }
+}
+
 fn find(constraints: [(u8, u8); 10], len: u8, predicate: impl Fn(u8) -> bool) -> u8 {
-    constraints
+    let (begin, end) = get_range(len);
+    constraints[begin..end]
         .iter()
-        .filter(|x| x.1 == len)
+        // .filter(|x| x.1 == len)
         .find(|x| predicate(x.0))
         .unwrap()
         .0
