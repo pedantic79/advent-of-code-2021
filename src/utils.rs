@@ -15,25 +15,24 @@ pub trait MyInteger: num::Integer + Clone + for<'a> Mul<&'a Self, Output = Self>
 
 impl<T> MyInteger for T where T: num::Integer + Clone + for<'a> Mul<&'a T, Output = T> {}
 
-pub trait IsizeAdd
+pub trait AddIsize
 where
-    Self: Sized,
+    Self: Sized + PartialOrd,
 {
-    fn isize_add(self, rhs: isize) -> Option<Self>;
-    fn isize_add_clamp(self, rhs: isize, max: Self) -> Option<Self>;
+    fn checked_add_isize(self, rhs: isize) -> Option<Self>;
+    fn checked_add_isize_clamp(self, rhs: isize, max: Self) -> Option<Self> {
+        self.checked_add_isize(rhs).filter(|x| x < &max)
+    }
 }
 
-impl IsizeAdd for usize {
-    fn isize_add(self, rhs: isize) -> Option<Self> {
+impl AddIsize for usize {
+    fn checked_add_isize(self, rhs: isize) -> Option<Self> {
+        let amount = Self::try_from(rhs.abs()).ok()?;
         if rhs < 0 {
-            self.checked_sub(rhs.abs() as Self)
+            self.checked_sub(amount)
         } else {
-            self.checked_add(rhs as Self)
+            self.checked_add(amount)
         }
-    }
-
-    fn isize_add_clamp(self, rhs: isize, max: Self) -> Option<Self> {
-        self.isize_add(rhs).filter(|&x| x < max)
     }
 }
 
