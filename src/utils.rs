@@ -15,6 +15,25 @@ pub trait MyInteger: num::Integer + Clone + for<'a> Mul<&'a Self, Output = Self>
 
 impl<T> MyInteger for T where T: num::Integer + Clone + for<'a> Mul<&'a T, Output = T> {}
 
+pub trait IsizeAdd {
+    fn isize_add(self, rhs: isize) -> Option<Self>
+    where
+        Self: Sized;
+}
+
+impl IsizeAdd for usize {
+    fn isize_add(self, rhs: isize) -> Option<Self>
+    where
+        Self: Sized,
+    {
+        if rhs < 0 {
+            self.checked_sub(rhs.abs() as usize)
+        } else {
+            self.checked_add(rhs as usize)
+        }
+    }
+}
+
 // Based on the C++ algorithm here: https://stackoverflow.com/a/53604277/7263440
 #[inline]
 pub fn mod_inv<U>(mut a: U, mut m: U) -> U
