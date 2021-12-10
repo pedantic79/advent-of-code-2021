@@ -2,22 +2,22 @@ use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 
 #[aoc_generator(day10)]
-pub fn generator(input: &str) -> Vec<Vec<char>> {
-    input.lines().map(|line| line.chars().collect()).collect()
+pub fn generator(input: &str) -> Vec<Vec<u8>> {
+    input.lines().map(|line| line.bytes().collect()).collect()
 }
 
-fn get_match(bracket: char) -> Option<char> {
+fn get_match(bracket: u8) -> Option<u8> {
     match bracket {
-        '(' => Some(')'),
-        '{' => Some('}'),
-        '[' => Some(']'),
-        '<' => Some('>'),
+        b'(' => Some(b')'),
+        b'{' => Some(b'}'),
+        b'[' => Some(b']'),
+        b'<' => Some(b'>'),
         _ => None,
     }
 }
 
-fn process(line: &[char]) -> Result<Vec<char>, char> {
-    let mut stack: Vec<char> = Vec::new();
+fn process(line: &[u8]) -> Result<Vec<u8>, u8> {
+    let mut stack = Vec::new();
 
     for &bracket in line.iter() {
         if let Some(right) = get_match(bracket) {
@@ -31,7 +31,7 @@ fn process(line: &[char]) -> Result<Vec<char>, char> {
 }
 
 #[aoc(day10, part1)]
-pub fn part1(inputs: &[Vec<char>]) -> usize {
+pub fn part1(inputs: &[Vec<u8>]) -> usize {
     inputs
         .iter()
         .map(|line| {
@@ -44,28 +44,28 @@ pub fn part1(inputs: &[Vec<char>]) -> usize {
         .sum()
 }
 
-fn score1(c: char) -> usize {
+fn score1(c: u8) -> usize {
     match c {
-        ')' => 3,
-        ']' => 57,
-        '}' => 1197,
-        '>' => 25137,
+        b')' => 3,
+        b']' => 57,
+        b'}' => 1197,
+        b'>' => 25137,
         _ => 0,
     }
 }
 
-fn score2(c: char) -> usize {
+fn score2(c: u8) -> usize {
     match c {
-        ')' => 1,
-        ']' => 2,
-        '}' => 3,
-        '>' => 4,
+        b')' => 1,
+        b']' => 2,
+        b'}' => 3,
+        b'>' => 4,
         _ => 0,
     }
 }
 
 #[aoc(day10, part2)]
-pub fn part2(inputs: &[Vec<char>]) -> usize {
+pub fn part2(inputs: &[Vec<u8>]) -> usize {
     let ans = inputs
         .iter()
         .filter_map(|line| match process(line) {
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     pub fn test_lines_part1() {
         let input = generator(SAMPLE);
-        for &(index, expected) in [(2, '}'), (4, ')'), (5, ']'), (7, ')'), (8, '>')].iter() {
+        for &(index, expected) in [(2, b'}'), (4, b')'), (5, b']'), (7, b')'), (8, b'>')].iter() {
             assert_eq!(process(&input[index]).unwrap_err(), expected);
         }
     }
@@ -134,7 +134,7 @@ mod tests {
             let mut ans = process(&input[index]).unwrap();
             ans.reverse();
 
-            let expected = expected.chars().collect_vec();
+            let expected = expected.bytes().collect_vec();
             assert_eq!(ans, expected);
         }
     }
