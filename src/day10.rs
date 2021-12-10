@@ -3,10 +3,7 @@ use itertools::Itertools;
 
 #[aoc_generator(day10)]
 pub fn generator(input: &str) -> Vec<Vec<char>> {
-    input
-        .lines()
-        .map(|line| line.chars().collect_vec())
-        .collect_vec()
+    input.lines().map(|line| line.chars().collect()).collect()
 }
 
 fn get_match(bracket: char) -> Option<char> {
@@ -20,10 +17,9 @@ fn get_match(bracket: char) -> Option<char> {
 }
 
 fn process(line: &[char]) -> Result<Vec<char>, char> {
-    const VALID: [char; 8] = ['(', ')', '[', ']', '{', '}', '<', '>'];
     let mut stack: Vec<char> = Vec::new();
 
-    for &bracket in line.iter().filter(|x| VALID.contains(x)) {
+    for &bracket in line.iter() {
         if let Some(right) = get_match(bracket) {
             stack.push(right);
         } else if Some(bracket) != stack.pop() {
@@ -38,54 +34,52 @@ fn process(line: &[char]) -> Result<Vec<char>, char> {
 pub fn part1(inputs: &[Vec<char>]) -> usize {
     inputs
         .iter()
-        .filter_map(|line| match process(line) {
-            Ok(_) => None,
-            Err(e) => {
-                // println!("{:?} => {}", line, e);
-                convert(e)
+        .map(|line| {
+            if let Err(e) = process(line) {
+                score1(e)
+            } else {
+                0
             }
         })
         .sum()
 }
 
-fn convert(c: char) -> Option<usize> {
-    Some(match c {
+fn score1(c: char) -> usize {
+    match c {
         ')' => 3,
         ']' => 57,
         '}' => 1197,
         '>' => 25137,
-        _ => return None,
-    })
+        _ => 0,
+    }
 }
 
-fn convert2(c: char) -> Option<usize> {
-    Some(match c {
+fn score2(c: char) -> usize {
+    match c {
         ')' => 1,
         ']' => 2,
         '}' => 3,
         '>' => 4,
-        _ => return None,
-    })
+        _ => 0,
+    }
 }
 
 #[aoc(day10, part2)]
 pub fn part2(inputs: &[Vec<char>]) -> usize {
-    let mut ans = inputs
+    let ans = inputs
         .iter()
         .filter_map(|line| match process(line) {
             Ok(v) => Some(
                 v.iter()
                     .rev()
-                    .filter_map(|&x| convert2(x))
+                    .map(|&x| score2(x))
                     .fold(0, |acc, x| acc * 5 + x),
             ),
             Err(_) => None,
         })
+        .sorted_unstable()
         .collect_vec();
 
-    ans.sort_unstable();
-
-    // println!("{:?}", ans);
     ans[ans.len() / 2]
 }
 
@@ -117,15 +111,37 @@ mod tests {
     }
 
     #[test]
-    pub fn test_line() {
-        let input: Vec<char> = "[({(<(())[]>[[{[]{<()<>>".chars().collect();
+    pub fn test_lines_part1() {
+        let input = generator(SAMPLE);
+        for &(index, expected) in [(2, '}'), (4, ')'), (5, ']'), (7, ')'), (8, '>')].iter() {
+            assert_eq!(process(&input[index]).unwrap_err(), expected);
+        }
+    }
 
-        println!("{:?}", process(&input));
+    #[test]
+    pub fn test_lines_part2() {
+        let input = generator(SAMPLE);
+
+        for &(index, expected) in [
+            (0, "}}]])})]"),
+            (1, ")}>]})"),
+            (3, "}}>}>))))"),
+            (6, "]]}}]}]}>"),
+            (9, "])}>"),
+        ]
+        .iter()
+        {
+            let mut ans = process(&input[index]).unwrap();
+            ans.reverse();
+
+            let expected = expected.chars().collect_vec();
+            assert_eq!(ans, expected);
+        }
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&generator(SAMPLE)), 336);
+        assert_eq!(part2(&generator(SAMPLE)), 288957);
     }
 
     mod regression {
