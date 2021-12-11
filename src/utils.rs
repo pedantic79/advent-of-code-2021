@@ -146,10 +146,58 @@ where
     sum % product
 }
 
-pub fn inc<T: MyInteger>(n: &mut T) {
-    *n = n.clone() + T::one();
+pub fn build_array<T, I, const N: usize>(mut iter: I) -> [T; N]
+where
+    T: Default + Copy,
+    I: Iterator<Item = T>,
+{
+    let mut res = [T::default(); N];
+
+    // BAD... We don't know if there are enough iterator elements to fill or overfill the array.
+    for slot in res.iter_mut() {
+        *slot = iter.next().unwrap();
+    }
+
+    res
 }
 
-pub fn dec<T: MyInteger>(n: &mut T) {
-    *n = n.clone() - T::one();
+pub fn neighbors(
+    r: usize,
+    c: usize,
+    r_max: usize,
+    c_max: usize,
+) -> impl Iterator<Item = (usize, usize)> {
+    [(-1, 0), (0, -1), (0, 1), (1, 0)]
+        .iter()
+        .filter_map(move |&(y, x)| {
+            let r_new = r.checked_add_isize_clamp(y, r_max)?;
+            let c_new = c.checked_add_isize_clamp(x, c_max)?;
+
+            Some((r_new, c_new))
+        })
+}
+
+pub fn neighbors_diag(
+    r: usize,
+    c: usize,
+    r_max: usize,
+    c_max: usize,
+) -> impl Iterator<Item = (usize, usize)> {
+    [
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+    ]
+    .iter()
+    .filter_map(move |&(y, x)| {
+        let r_new = r.checked_add_isize_clamp(y, r_max)?;
+        let c_new = c.checked_add_isize_clamp(x, c_max)?;
+
+        Some((r_new, c_new))
+    })
 }

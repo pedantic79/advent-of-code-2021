@@ -1,4 +1,4 @@
-use crate::utils::AddIsize;
+use crate::utils::neighbors;
 use std::cmp::Reverse;
 
 use aoc_runner_derive::{aoc, aoc_generator};
@@ -9,17 +9,6 @@ pub fn generator(input: &str) -> Vec<Vec<u8>> {
         .lines()
         .map(|l| l.chars().map(|x| x.to_digit(10).unwrap() as u8).collect())
         .collect()
-}
-
-fn neighbors(r: usize, c: usize, r_m: usize, c_m: usize) -> impl Iterator<Item = (usize, usize)> {
-    [(-1, 0), (0, -1), (0, 1), (1, 0)]
-        .iter()
-        .filter_map(move |&(y, x)| {
-            let r_new = r.checked_add_isize_clamp(y, r_m)?;
-            let c_new = c.checked_add_isize_clamp(x, c_m)?;
-
-            Some((r_new, c_new))
-        })
 }
 
 #[aoc(day9, part1)]
