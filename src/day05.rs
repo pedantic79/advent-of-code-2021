@@ -1,7 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 
-use crate::utils::{dec, inc};
-
 #[derive(Debug, PartialEq)]
 pub struct Line {
     start: (usize, usize),
@@ -24,6 +22,9 @@ impl Line {
     }
 
     fn points_part2(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        let inc = |x: &mut usize| *x += 1;
+        let dec = |x: &mut usize| *x -= 1;
+
         let r_inc = if self.start.0 < self.end.0 { inc } else { dec };
         let c_inc = if self.start.1 < self.end.1 { inc } else { dec };
         let (mut r, mut c) = self.start;

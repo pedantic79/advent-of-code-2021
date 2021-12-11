@@ -1,42 +1,7 @@
-use crate::utils::AddIsize;
+use crate::utils::{build_array, neighbors_diag};
 use aoc_runner_derive::{aoc, aoc_generator};
 
 const SIZE: usize = 10;
-
-fn neighbors(r: usize, c: usize, r_m: usize, c_m: usize) -> impl Iterator<Item = (usize, usize)> {
-    [
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-        (0, -1),
-        (0, 1),
-        (1, -1),
-        (1, 0),
-        (1, 1),
-    ]
-    .iter()
-    .filter_map(move |&(y, x)| {
-        let r_new = r.checked_add_isize_clamp(y, r_m)?;
-        let c_new = c.checked_add_isize_clamp(x, c_m)?;
-
-        Some((r_new, c_new))
-    })
-}
-
-fn build_array<T, I, const N: usize>(mut iter: I) -> [T; N]
-where
-    T: Default + Copy,
-    I: Iterator<Item = T>,
-{
-    let mut res = [T::default(); N];
-
-    // BAD... We don't know if there are enough iterator elements to fill or overfill the array.
-    for slot in res.iter_mut() {
-        *slot = iter.next().unwrap();
-    }
-
-    res
-}
 
 #[aoc_generator(day11)]
 pub fn generator(input: &str) -> [[u8; SIZE]; SIZE] {
@@ -47,7 +12,7 @@ pub fn generator(input: &str) -> [[u8; SIZE]; SIZE] {
     )
 }
 
-fn inc(slot: &mut u8) -> bool {
+fn increment(slot: &mut u8) -> bool {
     *slot += 1;
     *slot == 10
 }
@@ -57,7 +22,7 @@ fn step(m: &mut [[u8; SIZE]; SIZE]) -> usize {
 
     for (r, row) in m.iter_mut().enumerate() {
         for (c, cell) in row.iter_mut().enumerate() {
-            if inc(cell) {
+            if increment(cell) {
                 flashing.push((r, c));
             }
         }
@@ -66,8 +31,8 @@ fn step(m: &mut [[u8; SIZE]; SIZE]) -> usize {
     let mut flashed = Vec::new();
     while let Some((r, c)) = flashing.pop() {
         flashed.push((r, c));
-        for (y, x) in neighbors(r, c, SIZE, SIZE) {
-            if inc(&mut m[y][x]) {
+        for (y, x) in neighbors_diag(r, c, SIZE, SIZE) {
+            if increment(&mut m[y][x]) {
                 flashing.push((y, x));
             }
         }

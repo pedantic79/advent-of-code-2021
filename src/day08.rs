@@ -2,6 +2,8 @@ use std::{collections::HashMap, convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
+use crate::utils::build_array;
+
 #[derive(Debug, PartialEq)]
 pub struct Object {
     before: [(u8, u8); 10],
@@ -21,21 +23,6 @@ impl FromStr for Object {
 
         Ok(Object { before, after })
     }
-}
-
-fn build_array<T, I, const N: usize>(mut iter: I) -> [T; N]
-where
-    T: Default + Copy,
-    I: Iterator<Item = T>,
-{
-    let mut res = [T::default(); N];
-
-    // BAD... We don't know if there are enough iterator elements to fill or overfill the array.
-    for slot in res.iter_mut() {
-        *slot = iter.next().unwrap();
-    }
-
-    res
 }
 
 fn pack_digit(s: &str) -> (u8, u8) {
