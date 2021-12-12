@@ -17,6 +17,15 @@ fn increment(slot: &mut u8) -> bool {
     *slot == 10
 }
 
+fn reset(slot: &mut u8) -> usize {
+    if *slot > 9 {
+        *slot = 0;
+        1
+    } else {
+        0
+    }
+}
+
 fn step(m: &mut [[u8; SIZE]; SIZE]) -> usize {
     let mut flashing = Vec::new();
 
@@ -28,9 +37,7 @@ fn step(m: &mut [[u8; SIZE]; SIZE]) -> usize {
         }
     }
 
-    let mut flashed = Vec::new();
     while let Some((r, c)) = flashing.pop() {
-        flashed.push((r, c));
         for (y, x) in neighbors_diag(r, c, SIZE, SIZE) {
             if increment(&mut m[y][x]) {
                 flashing.push((y, x));
@@ -38,11 +45,9 @@ fn step(m: &mut [[u8; SIZE]; SIZE]) -> usize {
         }
     }
 
-    for &(r, c) in flashed.iter() {
-        m[r][c] = 0;
-    }
-
-    flashed.len()
+    m.iter_mut()
+        .map(|row| row.iter_mut().map(reset).sum::<usize>())
+        .sum()
 }
 
 #[aoc(day11, part1)]
