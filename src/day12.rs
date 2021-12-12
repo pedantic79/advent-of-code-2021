@@ -1,67 +1,60 @@
 use std::collections::HashMap;
 
-use aoc_runner_derive::{aoc, aoc_generator};
+use aoc_runner_derive::aoc;
 
-fn is_big(s: &str) -> bool {
-    s.bytes().all(|c| c.is_ascii_uppercase())
+fn is_little(s: &str) -> bool {
+    s.bytes().all(|c| c.is_ascii_lowercase())
 }
 
-#[aoc_generator(day12)]
-pub fn generator(input: &str) -> HashMap<String, Vec<String>> {
+// #[aoc_generator(day12)]
+pub fn generator(input: &str) -> HashMap<&str, Vec<&str>> {
     input
         .lines()
-        .map(|l| {
-            let (a, b) = l.split_once('-').unwrap();
-            (a.to_string(), b.to_string())
-        })
-        .fold(HashMap::new(), |mut hm, (k, v)| {
-            hm.entry(k.clone()).or_default().push(v.clone());
-            hm.entry(v).or_default().push(k);
+        .map(|l| l.split_once('-').unwrap())
+        .fold(HashMap::new(), |mut hm, (a, b)| {
+            hm.entry(a).or_default().push(b);
+            hm.entry(b).or_default().push(a);
             hm
         })
 }
 
-fn search(
-    caves: &HashMap<String, Vec<String>>,
-    visited: &mut HashMap<String, usize>,
-    location: &str,
-    part2: bool,
+fn search<'a>(
+    graph: &HashMap<&str, Vec<&'a str>>,
+    visited: &mut HashMap<&'a str, usize>,
+    location: &'a str,
+    allow_two_visits: bool,
 ) -> usize {
     if location == "end" {
         return 1;
     }
 
-    *visited.entry(location.to_string()).or_insert(0) += 1;
+    *visited.entry(location).or_insert(0) += 1;
 
     let mut total = 0;
-    for v in &caves[location] {
-        total += if visited.get(v).unwrap_or(&0) == &0 || is_big(v) {
-            search(caves, visited, v, part2)
-        } else if visited.get(v).unwrap_or(&0) == &1 && part2 {
-            search(caves, visited, v, false)
-        } else {
-            0
-        }
+    for &cave in &graph[location] {
+        total += match visited.get(cave).copied().unwrap_or(0) {
+            0 => search(graph, visited, cave, allow_two_visits),
+            _ if !is_little(cave) => search(graph, visited, cave, allow_two_visits),
+            1 if allow_two_visits => search(graph, visited, cave, false),
+            _ => 0,
+        };
     }
 
-    *visited.entry(location.to_string()).or_insert(0) -= 1;
+    *visited.entry(location).or_insert(0) -= 1;
 
     total
 }
 
 #[aoc(day12, part1)]
-pub fn part1(inputs: &HashMap<String, Vec<String>>) -> usize {
-    let mut visited = HashMap::new();
-
-    search(inputs, &mut visited, "start", false)
+pub fn part1(input: &str) -> usize {
+    search(&generator(input), &mut HashMap::new(), "start", false)
 }
 
 #[aoc(day12, part2)]
-pub fn part2(inputs: &HashMap<String, Vec<String>>) -> usize {
-    let mut visited = HashMap::new();
+pub fn part2(inputs: &str) -> usize {
+    let mut visited = [("start", 2)].into_iter().collect();
 
-    visited.insert("start".to_string(), 2);
-    search(inputs, &mut visited, "start", true)
+    search(&generator(inputs), &mut visited, "start", true)
 }
 
 #[cfg(test)]
@@ -76,16 +69,35 @@ b-d
 A-end
 b-end";
 
-    //     const SAMPLE2: &str = r"dc-end
-    // HN-start
-    // start-kj
-    // dc-start
-    // dc-HN
-    // LN-dc
-    // HN-end
-    // kj-sa
-    // kj-HN
-    // kj-dc";
+    const SAMPLE2: &str = r"dc-end
+HN-start
+start-kj
+dc-start
+dc-HN
+LN-dc
+HN-end
+kj-sa
+kj-HN
+kj-dc";
+
+    const SAMPLE3: &str = r"fs-end
+he-DX
+fs-he
+start-DX
+pj-DX
+end-zg
+zg-sl
+zg-pj
+pj-he
+RW-he
+fs-DX
+pj-RW
+zg-RW
+start-pj
+he-WI
+zg-he
+pj-fs
+start-RW";
 
     #[test]
     pub fn test_input() {
@@ -96,12 +108,16 @@ b-end";
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator(SAMPLE)), 10);
+        assert_eq!(part1(SAMPLE), 10);
+        assert_eq!(part1(SAMPLE2), 19);
+        assert_eq!(part1(SAMPLE3), 226);
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&generator(SAMPLE)), 36);
+        assert_eq!(part2(SAMPLE), 36);
+        assert_eq!(part2(SAMPLE2), 103);
+        assert_eq!(part2(SAMPLE3), 3509);
     }
 
     mod regression {
@@ -114,8 +130,8 @@ b-end";
         pub fn test() {
             let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(input), ANSWERS.0);
+            assert_eq!(part2(input), ANSWERS.1);
         }
     }
 }
