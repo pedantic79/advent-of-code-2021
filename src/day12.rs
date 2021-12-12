@@ -1,40 +1,86 @@
-use std::collections::HashMap;
+use std::{
+    collections::{hash_map::DefaultHasher, HashMap},
+    hash::{BuildHasher, BuildHasherDefault, Hash, Hasher},
+};
 
 use aoc_runner_derive::aoc;
+use lazy_static::lazy_static;
+use nohash_hasher::NoHashHasher;
+
+lazy_static! {
+    static ref START: Cave = Cave::new("start");
+    static ref END: Cave = Cave::new("end");
+}
 
 fn is_little(s: &str) -> bool {
     s.bytes().all(|c| c.is_ascii_lowercase())
 }
 
+#[derive(Debug, Eq, Clone, Copy)]
+pub struct Cave {
+    hash: u64,
+    little: bool,
+}
+
+impl std::hash::Hash for Cave {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.hash.hash(state);
+    }
+}
+
+impl PartialEq for Cave {
+    fn eq(&self, other: &Self) -> bool {
+        self.hash == other.hash
+    }
+}
+
+impl Cave {
+    fn new(name: &str) -> Self {
+        let mut s = DefaultHasher::new();
+        name.hash(&mut s);
+        let hash = s.finish();
+        Self {
+            hash,
+            little: is_little(name),
+        }
+    }
+}
+
+fn make_hashmap<K, V>() -> HashMap<K, V, BuildHasherDefault<NoHashHasher<u64>>> {
+    HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u64>>::default())
+}
+
 // #[aoc_generator(day12)]
-pub fn generator(input: &str) -> HashMap<&str, Vec<&str>> {
+pub fn generator(input: &str) -> HashMap<Cave, Vec<Cave>, BuildHasherDefault<NoHashHasher<u64>>> {
     input
         .lines()
         .map(|l| l.split_once('-').unwrap())
-        .fold(HashMap::new(), |mut hm, (a, b)| {
-            hm.entry(a).or_default().push(b);
-            hm.entry(b).or_default().push(a);
+        .fold(make_hashmap(), |mut hm, (a, b)| {
+            let x = Cave::new(a);
+            let y = Cave::new(b);
+            hm.entry(x).or_default().push(y);
+            hm.entry(y).or_default().push(x);
             hm
         })
 }
 
-fn search<'a>(
-    graph: &HashMap<&str, Vec<&'a str>>,
-    visited: &mut HashMap<&'a str, usize>,
-    location: &'a str,
+fn search<S: BuildHasher>(
+    graph: &HashMap<Cave, Vec<Cave>, S>,
+    visited: &mut HashMap<Cave, usize, S>,
+    location: Cave,
     allow_two_visits: bool,
 ) -> usize {
-    if location == "end" {
+    if location == *END {
         return 1;
     }
 
     *visited.entry(location).or_insert(0) += 1;
 
     let mut total = 0;
-    for &cave in &graph[location] {
-        total += match visited.get(cave).copied().unwrap_or(0) {
+    for &cave in &graph[&location] {
+        total += match visited.get(&cave).copied().unwrap_or(0) {
             0 => search(graph, visited, cave, allow_two_visits),
-            _ if !is_little(cave) => search(graph, visited, cave, allow_two_visits),
+            _ if !cave.little => search(graph, visited, cave, allow_two_visits),
             1 if allow_two_visits => search(graph, visited, cave, false),
             _ => 0,
         };
@@ -47,14 +93,15 @@ fn search<'a>(
 
 #[aoc(day12, part1)]
 pub fn part1(input: &str) -> usize {
-    search(&generator(input), &mut HashMap::new(), "start", false)
+    search(&generator(input), &mut make_hashmap(), *START, false)
 }
 
 #[aoc(day12, part2)]
 pub fn part2(inputs: &str) -> usize {
-    let mut visited = [("start", 2)].into_iter().collect();
+    let mut visited = make_hashmap();
+    visited.insert(*START, 2);
 
-    search(&generator(inputs), &mut visited, "start", true)
+    search(&generator(inputs), &mut visited, *START, true)
 }
 
 #[cfg(test)]
