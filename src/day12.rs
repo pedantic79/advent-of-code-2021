@@ -3,7 +3,7 @@ use std::{
     hash::{BuildHasher, BuildHasherDefault, Hash, Hasher},
 };
 
-use aoc_runner_derive::aoc;
+use aoc_runner_derive::{aoc, aoc_generator};
 use lazy_static::lazy_static;
 use nohash_hasher::NoHashHasher;
 
@@ -46,12 +46,15 @@ impl Cave {
     }
 }
 
-fn make_hashmap<K, V>() -> HashMap<K, V, BuildHasherDefault<NoHashHasher<u64>>> {
-    HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<u64>>::default())
+type HashT = u64;
+type CaveMap<K, V> = HashMap<K, V, BuildHasherDefault<NoHashHasher<HashT>>>;
+
+fn make_hashmap<K, V>() -> CaveMap<K, V> {
+    HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<HashT>>::default())
 }
 
-// #[aoc_generator(day12)]
-pub fn generator(input: &str) -> HashMap<Cave, Vec<Cave>, BuildHasherDefault<NoHashHasher<u64>>> {
+#[aoc_generator(day12)]
+pub fn generator(input: &str) -> CaveMap<Cave, Vec<Cave>> {
     input
         .lines()
         .map(|l| l.split_once('-').unwrap())
@@ -92,16 +95,16 @@ fn search<S: BuildHasher>(
 }
 
 #[aoc(day12, part1)]
-pub fn part1(input: &str) -> usize {
-    search(&generator(input), &mut make_hashmap(), *START, false)
+pub fn part1(input: &CaveMap<Cave, Vec<Cave>>) -> usize {
+    search(input, &mut make_hashmap(), *START, false)
 }
 
 #[aoc(day12, part2)]
-pub fn part2(inputs: &str) -> usize {
+pub fn part2(inputs: &CaveMap<Cave, Vec<Cave>>) -> usize {
     let mut visited = make_hashmap();
     visited.insert(*START, 2);
 
-    search(&generator(inputs), &mut visited, *START, true)
+    search(inputs, &mut visited, *START, true)
 }
 
 #[cfg(test)]
@@ -155,16 +158,16 @@ start-RW";
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(SAMPLE), 10);
-        assert_eq!(part1(SAMPLE2), 19);
-        assert_eq!(part1(SAMPLE3), 226);
+        assert_eq!(part1(&generator(SAMPLE)), 10);
+        assert_eq!(part1(&generator(SAMPLE2)), 19);
+        assert_eq!(part1(&generator(SAMPLE3)), 226);
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(SAMPLE), 36);
-        assert_eq!(part2(SAMPLE2), 103);
-        assert_eq!(part2(SAMPLE3), 3509);
+        assert_eq!(part2(&generator(SAMPLE)), 36);
+        assert_eq!(part2(&generator(SAMPLE2)), 103);
+        assert_eq!(part2(&generator(SAMPLE3)), 3509);
     }
 
     mod regression {
@@ -177,8 +180,8 @@ start-RW";
         pub fn test() {
             let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
 
-            assert_eq!(part1(input), ANSWERS.0);
-            assert_eq!(part2(input), ANSWERS.1);
+            assert_eq!(part1(&generator(input)), ANSWERS.0);
+            assert_eq!(part2(&generator(input)), ANSWERS.1);
         }
     }
 }
