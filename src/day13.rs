@@ -38,25 +38,25 @@ pub fn generator(input: &str) -> Object {
     Object { dots, ins }
 }
 
-fn fold_x(input: &HashSet<(usize, usize)>, pos: usize) -> HashSet<(usize, usize)> {
-    input
-        .iter()
-        .map(|&(x, y)| if x > pos { (2 * pos - x, y) } else { (x, y) })
-        .collect()
+fn fold_x(input: &mut HashSet<(usize, usize)>, pos: usize) {
+    *input = input
+        .drain()
+        .map(|(x, y)| if x > pos { (2 * pos - x, y) } else { (x, y) })
+        .collect();
 }
 
-fn fold_y(input: &HashSet<(usize, usize)>, pos: usize) -> HashSet<(usize, usize)> {
-    input
-        .iter()
-        .map(|&(x, y)| if y > pos { (x, 2 * pos - y) } else { (x, y) })
-        .collect()
+fn fold_y(input: &mut HashSet<(usize, usize)>, pos: usize) {
+    *input = input
+        .drain()
+        .map(|(x, y)| if y > pos { (x, 2 * pos - y) } else { (x, y) })
+        .collect();
 }
 
 fn fold(input: &mut HashSet<(usize, usize)>, axis: char, pos: usize) {
     if axis == 'y' {
-        *input = fold_y(input, pos);
+        fold_y(input, pos);
     } else {
-        *input = fold_x(input, pos);
+        fold_x(input, pos);
     }
 }
 
