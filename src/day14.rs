@@ -8,7 +8,7 @@ use crate::utils::build_array;
 #[derive(Debug, PartialEq)]
 pub struct Object {
     start: String,
-    rules: HashMap<[u8; 2], char>,
+    rules: HashMap<[u8; 2], u8>,
 }
 
 #[aoc_generator(day14)]
@@ -20,70 +20,31 @@ pub fn generator(input: &str) -> Object {
         .lines()
         .map(|l| {
             let (a, b) = l.split_once(" -> ").unwrap();
-            (build_array(a.bytes()), b.parse().unwrap())
+            (build_array(a.bytes()), b.parse::<char>().unwrap() as u8)
         })
         .collect();
 
     Object { start, rules }
 }
 
-fn tick(input: &str, lookup: &HashMap<[u8; 2], char>) -> String {
-    let v = input.as_bytes();
-
-    let mut output = String::new();
-    output.push(v[0] as char);
-
-    for w in v.windows(2) {
-        let c = lookup.get(w).unwrap();
-
-        output.push(*c);
-        output.push(w[1] as char);
-    }
-
-    output
+fn generate_count(input: &str) -> HashMap<[u8; 2], usize> {
+    input
+        .as_bytes()
+        .windows(2)
+        .fold(HashMap::new(), |mut count, w| {
+            *count.entry(build_array(w.iter().copied())).or_insert(0) += 1;
+            count
+        })
 }
 
-fn generate_count(input: &str, lookup: &HashMap<[u8; 2], char>) -> HashMap<[u8; 2], usize> {
-    let mut count = HashMap::new();
+fn solve<const N: usize>(inputs: &Object) -> usize {
+    let mut s = generate_count(&inputs.start);
 
-    for w in input.as_bytes().windows(2) {
-        *count.entry(build_array(w.iter().copied())).or_insert(0) += 1;
-    }
-
-    count
-}
-
-#[aoc(day14, part1)]
-pub fn part1(inputs: &Object) -> usize {
-    let mut s = inputs.start.clone();
-
-    for _ in 0..10 {
-        s = tick(&s, &inputs.rules);
-    }
-
-    let freq = s.chars().fold(HashMap::new(), |mut hm, c| {
-        *hm.entry(c).or_insert(0) += 1;
-        hm
-    });
-
-    let (min, max) = freq
-        .iter()
-        .minmax_by_key(|&(_, &count)| count)
-        .into_option()
-        .unwrap();
-
-    freq[max.0] - freq[min.0]
-}
-
-#[aoc(day14, part2)]
-pub fn part2(inputs: &Object) -> usize {
-    let mut s = generate_count(&inputs.start, &inputs.rules);
-
-    for _ in 0..40 {
+    for _ in 0..N {
         let mut new_s = HashMap::new();
         for (k, count) in s.iter() {
             let &gen = inputs.rules.get(k).unwrap();
-            let (left, right) = ([k[0], gen as u8], [gen as u8, k[1]]);
+            let (left, right) = ([k[0], gen], [gen, k[1]]);
             *new_s.entry(left).or_default() += count;
             *new_s.entry(right).or_default() += count;
         }
@@ -92,12 +53,12 @@ pub fn part2(inputs: &Object) -> usize {
     }
 
     let mut freq = s.iter().fold(HashMap::new(), |mut hm, c| {
-        *hm.entry(c.0[1] as char).or_insert(0) += c.1;
+        *hm.entry(c.0[1]).or_insert(0) += c.1;
 
         hm
     });
 
-    *freq.entry(inputs.start.as_bytes()[0] as char).or_insert(0) += 1;
+    *freq.entry(inputs.start.as_bytes()[0]).or_insert(0) += 1;
 
     let (min, max) = freq
         .iter()
@@ -105,8 +66,17 @@ pub fn part2(inputs: &Object) -> usize {
         .into_option()
         .unwrap();
 
-    println!("{:?}", freq);
     freq[max.0] - freq[min.0]
+}
+
+#[aoc(day14, part1)]
+pub fn part1(inputs: &Object) -> usize {
+    solve::<10>(inputs)
+}
+
+#[aoc(day14, part2)]
+pub fn part2(inputs: &Object) -> usize {
+    solve::<40>(inputs)
 }
 
 #[cfg(test)]
