@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, mem::swap};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
@@ -38,40 +38,53 @@ pub fn generator(input: &str) -> Object {
     Object { dots, ins }
 }
 
-fn fold_x(input: &mut HashSet<(usize, usize)>, pos: usize) {
-    *input = input
-        .drain()
-        .map(|(x, y)| if x > pos { (2 * pos - x, y) } else { (x, y) })
-        .collect();
+fn fold_x(input: &mut HashSet<(usize, usize)>, temp: &mut HashSet<(usize, usize)>, pos: usize) {
+    temp.extend(
+        input
+            .drain()
+            .map(|(x, y)| if x > pos { (2 * pos - x, y) } else { (x, y) }),
+    )
 }
 
-fn fold_y(input: &mut HashSet<(usize, usize)>, pos: usize) {
-    *input = input
-        .drain()
-        .map(|(x, y)| if y > pos { (x, 2 * pos - y) } else { (x, y) })
-        .collect();
+fn fold_y(input: &mut HashSet<(usize, usize)>, temp: &mut HashSet<(usize, usize)>, pos: usize) {
+    temp.extend(
+        input
+            .drain()
+            .map(|(x, y)| if y > pos { (x, 2 * pos - y) } else { (x, y) }),
+    );
 }
 
-fn fold(input: &mut HashSet<(usize, usize)>, axis: char, pos: usize) {
+fn fold(
+    input: &mut HashSet<(usize, usize)>,
+    temp: &mut HashSet<(usize, usize)>,
+    axis: char,
+    pos: usize,
+) {
     if axis == 'y' {
-        fold_y(input, pos);
+        fold_y(input, temp, pos);
     } else {
-        fold_x(input, pos);
+        fold_x(input, temp, pos);
     }
+
+    swap(input, temp);
 }
 
 #[aoc(day13, part1)]
 pub fn part1(Object { dots, ins }: &Object) -> usize {
     let mut dots = dots.clone();
-    fold(&mut dots, ins[0].0, ins[0].1);
+    let mut temp = HashSet::new();
+
+    fold(&mut dots, &mut temp, ins[0].0, ins[0].1);
     dots.len()
 }
 
 #[aoc(day13, part2)]
 pub fn part2(Object { dots, ins }: &Object) -> String {
     let mut dots = dots.clone();
+    let mut temp = HashSet::new();
+
     for (a, b) in ins {
-        fold(&mut dots, *a, *b);
+        fold(&mut dots, &mut temp, *a, *b);
     }
 
     let (y_min, y_max) = dots.iter().map(|(_, y)| *y).minmax().into_option().unwrap();
