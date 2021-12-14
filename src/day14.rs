@@ -5,7 +5,7 @@ use itertools::Itertools;
 use nohash_hasher::IntMap;
 
 #[derive(Debug, PartialEq)]
-pub struct Object {
+pub struct Day14 {
     start: String,
     rules: IntMap<u16, u8>,
 }
@@ -23,7 +23,7 @@ fn encode_iter(mut i: impl Iterator<Item = u8>) -> u16 {
 }
 
 #[aoc_generator(day14)]
-pub fn generator(input: &str) -> Object {
+pub fn generator(input: &str) -> Day14 {
     let (part1, part2) = input.split_once("\n\n").unwrap();
 
     let start = part1.to_string();
@@ -35,7 +35,7 @@ pub fn generator(input: &str) -> Object {
         })
         .collect();
 
-    Object { start, rules }
+    Day14 { start, rules }
 }
 
 fn generate_count(input: &str) -> HashMap<u16, usize> {
@@ -48,15 +48,16 @@ fn generate_count(input: &str) -> HashMap<u16, usize> {
         })
 }
 
-fn solve<const N: usize>(inputs: &Object) -> usize {
+fn solve<const N: usize>(inputs: &Day14) -> usize {
     let mut s = generate_count(&inputs.start);
     let mut new_s = HashMap::new();
 
     for _ in 0..N {
-        for (k, count) in s.drain() {
-            let &gen = inputs.rules.get(&k).unwrap();
-            let (a, b) = decode(k);
+        new_s.clear();
 
+        for (k, &gen) in inputs.rules.iter() {
+            let &count = s.get(k).unwrap_or(&0);
+            let (a, b) = decode(*k);
             let (left, right) = (encode(a, gen), encode(gen, b));
             *new_s.entry(left).or_default() += count;
             *new_s.entry(right).or_default() += count;
@@ -84,12 +85,12 @@ fn solve<const N: usize>(inputs: &Object) -> usize {
 }
 
 #[aoc(day14, part1)]
-pub fn part1(inputs: &Object) -> usize {
+pub fn part1(inputs: &Day14) -> usize {
     solve::<10>(inputs)
 }
 
 #[aoc(day14, part2)]
-pub fn part2(inputs: &Object) -> usize {
+pub fn part2(inputs: &Day14) -> usize {
     solve::<40>(inputs)
 }
 
