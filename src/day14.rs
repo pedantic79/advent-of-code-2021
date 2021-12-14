@@ -1,14 +1,25 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, mem::swap};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-
-use crate::utils::build_array;
+use nohash_hasher::IntMap;
 
 #[derive(Debug, PartialEq)]
 pub struct Object {
     start: String,
-    rules: HashMap<[u8; 2], u8>,
+    rules: IntMap<u16, u8>,
+}
+
+fn encode(a: u8, b: u8) -> u16 {
+    ((a as u16) << 8) + b as u16
+}
+
+fn decode(x: u16) -> (u8, u8) {
+    ((x >> 8) as u8, (x & 0xff) as u8)
+}
+
+fn encode_iter(mut i: impl Iterator<Item = u8>) -> u16 {
+    encode(i.next().unwrap(), i.next().unwrap())
 }
 
 #[aoc_generator(day14)]
@@ -20,40 +31,43 @@ pub fn generator(input: &str) -> Object {
         .lines()
         .map(|l| {
             let (a, b) = l.split_once(" -> ").unwrap();
-            (build_array(a.bytes()), b.parse::<char>().unwrap() as u8)
+            (encode_iter(a.bytes()), b.parse::<char>().unwrap() as u8)
         })
         .collect();
 
     Object { start, rules }
 }
 
-fn generate_count(input: &str) -> HashMap<[u8; 2], usize> {
+fn generate_count(input: &str) -> HashMap<u16, usize> {
     input
         .as_bytes()
         .windows(2)
         .fold(HashMap::new(), |mut count, w| {
-            *count.entry(build_array(w.iter().copied())).or_insert(0) += 1;
+            *count.entry(encode(w[0], w[1])).or_insert(0) += 1;
             count
         })
 }
 
 fn solve<const N: usize>(inputs: &Object) -> usize {
     let mut s = generate_count(&inputs.start);
+    let mut new_s = HashMap::new();
 
     for _ in 0..N {
-        let mut new_s = HashMap::new();
-        for (k, count) in s.iter() {
-            let &gen = inputs.rules.get(k).unwrap();
-            let (left, right) = ([k[0], gen], [gen, k[1]]);
+        for (k, count) in s.drain() {
+            let &gen = inputs.rules.get(&k).unwrap();
+            let (a, b) = decode(k);
+
+            let (left, right) = (encode(a, gen), encode(gen, b));
             *new_s.entry(left).or_default() += count;
             *new_s.entry(right).or_default() += count;
         }
 
-        s = new_s;
+        swap(&mut s, &mut new_s);
     }
 
     let mut freq = s.iter().fold(HashMap::new(), |mut hm, c| {
-        *hm.entry(c.0[1]).or_insert(0) += c.1;
+        let (_, b) = decode(*c.0);
+        *hm.entry(b).or_insert(0) += c.1;
 
         hm
     });
