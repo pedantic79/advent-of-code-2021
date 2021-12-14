@@ -1,25 +1,20 @@
-use std::{collections::HashMap, mem::swap};
-
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-use nohash_hasher::IntMap;
+
+const SIZE: usize = 26;
 
 #[derive(Debug, PartialEq)]
 pub struct Day14 {
     start: String,
-    rules: IntMap<u16, u8>,
+    rules: Vec<(u8, u8, u8)>,
 }
 
-fn encode(a: u8, b: u8) -> u16 {
-    ((a as u16) << 8) + b as u16
+fn ord(a: u8) -> usize {
+    usize::from(a - b'A')
 }
 
-fn decode(x: u16) -> (u8, u8) {
-    ((x >> 8) as u8, (x & 0xff) as u8)
-}
-
-fn encode_iter(mut i: impl Iterator<Item = u8>) -> u16 {
-    encode(i.next().unwrap(), i.next().unwrap())
+fn encode(a: u8, b: u8) -> usize {
+    ord(a) * SIZE + ord(b)
 }
 
 #[aoc_generator(day14)]
@@ -31,57 +26,59 @@ pub fn generator(input: &str) -> Day14 {
         .lines()
         .map(|l| {
             let (a, b) = l.split_once(" -> ").unwrap();
-            (encode_iter(a.bytes()), b.parse::<char>().unwrap() as u8)
+            let b = b.parse::<char>().unwrap() as u8;
+            let a = a.as_bytes();
+            (a[0], a[1], b)
         })
         .collect();
 
     Day14 { start, rules }
 }
 
-fn generate_count(input: &str) -> HashMap<u16, usize> {
+fn generate_count(input: &str) -> [usize; SIZE * SIZE] {
     input
         .as_bytes()
         .windows(2)
-        .fold(HashMap::new(), |mut count, w| {
-            *count.entry(encode(w[0], w[1])).or_insert(0) += 1;
+        .fold([0; SIZE * SIZE], |mut count, w| {
+            count[encode(w[0], w[1])] += 1;
             count
         })
 }
 
 fn solve<const N: usize>(inputs: &Day14) -> usize {
     let mut s = generate_count(&inputs.start);
-    let mut new_s = HashMap::new();
 
     for _ in 0..N {
-        new_s.clear();
+        let mut new_s = [0; SIZE * SIZE];
 
-        for (k, &gen) in inputs.rules.iter() {
-            let &count = s.get(k).unwrap_or(&0);
-            let (a, b) = decode(*k);
+        for &(a, b, gen) in inputs.rules.iter() {
+            let count = s[encode(a, b)];
             let (left, right) = (encode(a, gen), encode(gen, b));
-            *new_s.entry(left).or_default() += count;
-            *new_s.entry(right).or_default() += count;
+            new_s[left] += count;
+            new_s[right] += count;
         }
-
-        swap(&mut s, &mut new_s);
+        s = new_s;
     }
 
-    let mut freq = s.iter().fold(HashMap::new(), |mut hm, c| {
-        let (_, b) = decode(*c.0);
-        *hm.entry(b).or_insert(0) += c.1;
+    let mut freq =
+        s.iter()
+            .enumerate()
+            .filter(|(_, x)| **x > 0)
+            .fold([0; SIZE], |mut hm, (k, &c)| {
+                hm[k % SIZE] += c;
+                hm
+            });
 
-        hm
-    });
+    freq[ord(inputs.start.as_bytes()[0])] += 1;
 
-    *freq.entry(inputs.start.as_bytes()[0]).or_insert(0) += 1;
-
-    let (min, max) = freq
+    let (&min, &max) = freq
         .iter()
-        .minmax_by_key(|&(_, &count)| count)
+        .filter(|x| **x > 0)
+        .minmax_by_key(|&count| count)
         .into_option()
         .unwrap();
 
-    freq[max.0] - freq[min.0]
+    max - min
 }
 
 #[aoc(day14, part1)]
