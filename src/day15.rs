@@ -1,5 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use pathfinding::prelude::{absdiff, astar};
+use pathfinding::prelude::dijkstra;
 
 use crate::utils::neighbors;
 
@@ -15,27 +15,11 @@ pub fn generator(input: &str) -> Vec<Vec<usize>> {
         .collect()
 }
 
-fn solve<const M: usize>(map: &[Vec<usize>]) -> usize {
-    let h0 = map.len();
-    let w0 = map[0].len();
-    let height = h0 * M;
-    let width = w0 * M;
-
-    let get = |(r, c): (usize, usize)| -> usize {
-        let mut ans = map[r % h0][c % h0] + r / h0 + c / h0;
-        while ans > 9 {
-            ans -= 9;
-        }
-        ans
-    };
-
-    let goal = (height - 1, width - 1);
-
-    astar(
+fn solve(get: impl Fn((usize, usize)) -> usize, height: usize, width: usize) -> usize {
+    dijkstra(
         &(0, 0),
         |p| neighbors(p.0, p.1, height, width).map(|p| (p, get(p))),
-        |p| absdiff(goal.0, p.0) + absdiff(goal.1, p.1),
-        |p| *p == goal,
+        |p| *p == (height - 1, width - 1),
     )
     .unwrap()
     .1
@@ -43,12 +27,24 @@ fn solve<const M: usize>(map: &[Vec<usize>]) -> usize {
 
 #[aoc(day15, part1)]
 pub fn part1(map: &[Vec<usize>]) -> usize {
-    solve::<1>(map)
+    solve(|p| map[p.0][p.1], map.len(), map[0].len())
 }
 
 #[aoc(day15, part2)]
 pub fn part2(map: &[Vec<usize>]) -> usize {
-    solve::<5>(map)
+    const M: usize = 5;
+    let h0 = map.len();
+    let w0 = map[0].len();
+
+    let get = |(r, c): (usize, usize)| -> usize {
+        let mut ans = map[r % h0][c % h0] + r / h0 + c / h0;
+        if ans > 9 {
+            ans -= 9;
+        }
+        ans
+    };
+
+    solve(get, h0 * M, w0 * M)
 }
 
 #[cfg(test)]
