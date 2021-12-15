@@ -38,7 +38,7 @@ pub fn part2(map: &[Vec<usize>]) -> usize {
     let w0 = map[0].len();
 
     let get = |(r, c): (usize, usize)| -> usize {
-        let ans = map[r % h0][c % h0] + r / h0 + c / h0;
+        let ans = map[r % h0][c % w0] + r / h0 + c / w0;
         (ans - 1) % 9 + 1
     };
 
