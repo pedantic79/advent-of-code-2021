@@ -19,6 +19,7 @@ fn solve(get: impl Fn((usize, usize)) -> usize, height: usize, width: usize) -> 
     dijkstra(
         &(0, 0),
         |p| neighbors(p.0, p.1, height, width).map(|p| (p, get(p))),
+        //   |p| absdiff(height - 1, p.0) + absdiff(p.1, width - 1),
         |p| *p == (height - 1, width - 1),
     )
     .unwrap()
@@ -37,11 +38,8 @@ pub fn part2(map: &[Vec<usize>]) -> usize {
     let w0 = map[0].len();
 
     let get = |(r, c): (usize, usize)| -> usize {
-        let mut ans = map[r % h0][c % h0] + r / h0 + c / h0;
-        if ans > 9 {
-            ans -= 9;
-        }
-        ans
+        let ans = map[r % h0][c % h0] + r / h0 + c / h0;
+        (ans - 1) % 9 + 1
     };
 
     solve(get, h0 * M, w0 * M)
