@@ -1,11 +1,10 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use itertools::Itertools;
 use pathfinding::prelude::astar;
 
 use crate::utils::neighbors;
 
-#[aoc_generator(day15, part1)]
-pub fn generator1(input: &str) -> Vec<Vec<usize>> {
+#[aoc_generator(day15)]
+pub fn generator(input: &str) -> Vec<Vec<usize>> {
     input
         .lines()
         .map(|l| {
@@ -16,52 +15,24 @@ pub fn generator1(input: &str) -> Vec<Vec<usize>> {
         .collect()
 }
 
-fn inc(i: &mut usize) {
-    *i += 1;
-    if *i > 9 {
-        *i -= 9;
-    }
-}
+fn solve<const M: usize>(map: &[Vec<usize>]) -> usize {
+    let h0 = map.len();
+    let w0 = map[0].len();
+    let height = h0 * M;
+    let width = w0 * M;
 
-#[aoc_generator(day15, part2)]
-pub fn generator2(input: &str) -> Vec<Vec<usize>> {
-    let mut res = input
-        .lines()
-        .map(|l| {
-            let mut row = Vec::new();
-
-            let mut segment = l
-                .chars()
-                .map(|c| char::to_digit(c, 10).unwrap() as usize)
-                .collect_vec();
-
-            for _ in 0..5 {
-                row.extend_from_slice(&segment);
-                segment.iter_mut().for_each(inc);
-            }
-            row
-        })
-        .collect_vec();
-
-    let height = res.len();
-
-    for r in 0..height * 4 {
-        let mut row = res[r].clone();
-        row.iter_mut().for_each(inc);
-
-        res.push(row);
-    }
-    res
-}
-
-fn solve(map: &[Vec<usize>]) -> usize {
-    let height = map.len();
-    let width = map[0].len();
+    let get = |(r, c): (usize, usize)| -> usize {
+        let mut ans = map[r % h0][c % h0] + r / h0 + c / h0;
+        while ans > 9 {
+            ans -= 9;
+        }
+        ans
+    };
 
     let (_, c) = astar(
         &(0, 0),
-        |p| neighbors(p.0, p.1, height, width).map(|(y, x)| ((y, x), map[y][x])),
-        |p| map[p.0][p.1],
+        |p| neighbors(p.0, p.1, height, width).map(|p| (p, get(p))),
+        |p| get(*p),
         |p| *p == (height - 1, width - 1),
     )
     .unwrap();
@@ -71,12 +42,12 @@ fn solve(map: &[Vec<usize>]) -> usize {
 
 #[aoc(day15, part1)]
 pub fn part1(map: &[Vec<usize>]) -> usize {
-    solve(map)
+    solve::<1>(map)
 }
 
 #[aoc(day15, part2)]
 pub fn part2(map: &[Vec<usize>]) -> usize {
-    solve(map)
+    solve::<5>(map)
 }
 
 #[cfg(test)]
@@ -96,19 +67,19 @@ mod tests {
 
     #[test]
     pub fn test_input() {
-        println!("{:?}", generator2(SAMPLE));
+        println!("{:?}", generator(SAMPLE));
 
         // assert_eq!(generator(SAMPLE), Object());
     }
 
     #[test]
     pub fn test1() {
-        assert_eq!(part1(&generator1(SAMPLE)), 40);
+        assert_eq!(part1(&generator(SAMPLE)), 40);
     }
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&generator2(SAMPLE)), 315);
+        assert_eq!(part2(&generator(SAMPLE)), 315);
     }
 
     mod regression {
@@ -121,8 +92,8 @@ mod tests {
         pub fn test() {
             let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
 
-            assert_eq!(part1(&generator1(input)), ANSWERS.0);
-            assert_eq!(part2(&generator2(input)), ANSWERS.1);
+            assert_eq!(part1(&generator(input)), ANSWERS.0);
+            assert_eq!(part2(&generator(input)), ANSWERS.1);
         }
     }
 }
