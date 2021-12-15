@@ -1,5 +1,6 @@
+use std::{cmp::Reverse, collections::BinaryHeap};
+
 use aoc_runner_derive::{aoc, aoc_generator};
-use pathfinding::prelude::dijkstra;
 
 use crate::utils::neighbors;
 
@@ -16,14 +17,27 @@ pub fn generator(input: &str) -> Vec<Vec<usize>> {
 }
 
 fn solve(get: impl Fn((usize, usize)) -> usize, height: usize, width: usize) -> usize {
-    dijkstra(
-        &(0, 0),
-        |p| neighbors(p.0, p.1, height, width).map(|p| (p, get(p))),
-        //   |p| absdiff(height - 1, p.0) + absdiff(p.1, width - 1),
-        |p| *p == (height - 1, width - 1),
-    )
-    .unwrap()
-    .1
+    let mut costs = vec![vec![usize::MAX; width]; height];
+    costs[0][0] = 0;
+
+    let mut heap = BinaryHeap::new();
+    heap.push((Reverse(0), 0, 0));
+
+    while let Some((Reverse(_), y, x)) = heap.pop() {
+        if y == height - 1 && x == width - 1 {
+            return costs[y][x];
+        }
+
+        for (r, c) in neighbors(y, x, height, width) {
+            let next_cost = costs[y][x] + get((r, c));
+            if next_cost < costs[r][c] {
+                costs[r][c] = next_cost;
+                heap.push((Reverse(next_cost), r, c));
+            }
+        }
+    }
+
+    unreachable!()
 }
 
 #[aoc(day15, part1)]
