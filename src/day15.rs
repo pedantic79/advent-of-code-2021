@@ -1,5 +1,5 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use pathfinding::prelude::astar;
+use pathfinding::prelude::{absdiff, astar};
 
 use crate::utils::neighbors;
 
@@ -29,15 +29,16 @@ fn solve<const M: usize>(map: &[Vec<usize>]) -> usize {
         ans
     };
 
-    let (_, c) = astar(
+    let goal = (height - 1, width - 1);
+
+    astar(
         &(0, 0),
         |p| neighbors(p.0, p.1, height, width).map(|p| (p, get(p))),
-        |p| get(*p),
-        |p| *p == (height - 1, width - 1),
+        |p| absdiff(goal.0, p.0) + absdiff(goal.1, p.1),
+        |p| *p == goal,
     )
-    .unwrap();
-
-    c
+    .unwrap()
+    .1
 }
 
 #[aoc(day15, part1)]
