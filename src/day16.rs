@@ -5,15 +5,7 @@ pub fn generator(input: &str) -> Vec<usize> {
     let mut res = Vec::new();
 
     for n in input.chars().map(|c| c.to_digit(16).unwrap() as usize) {
-        res.extend(
-            [
-                (n & 0b1000) >> 3,
-                (n & 0b0100) >> 2,
-                (n & 0b0010) >> 1,
-                n & 0b0001,
-            ]
-            .iter(),
-        );
+        res.extend([n >> 3 & 0b1, n >> 2 & 0b1, n >> 1 & 0b1, n & 0b1].into_iter());
     }
 
     res
