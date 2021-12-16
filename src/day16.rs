@@ -61,58 +61,34 @@ impl Increment for usize {
     }
 }
 
-fn solve1(p: &[usize], mut pc: usize) -> (usize, usize) {
+fn solve(p: &[usize], mut pc: usize) -> (usize, usize, usize) {
     let mut version = to_decimal(&p[pc..pc.inc(3)]);
     let typeid = to_decimal(&p[pc..pc.inc(3)]);
 
     if typeid == 4 {
-        let (a, _) = decode_type4(&p[pc..]);
-        (pc + a, version)
-    } else {
-        if p[pc] == 0 {
-            let l = to_decimal(&p[pc.inc(1)..pc.inc(15)]);
-            let stop = pc + l;
-
-            while pc < stop {
-                let (npc, ver) = solve1(p, pc);
-                version += ver;
-                pc = npc;
-            }
-        } else {
-            let l = to_decimal(&p[pc.inc(1)..pc.inc(11)]);
-            for _ in 0..l {
-                let (npc, ver) = solve1(p, pc);
-                version += ver;
-                pc = npc;
-            }
-        }
-
-        (pc, version)
-    }
-}
-
-fn solve2(p: &[usize], mut pc: usize) -> (usize, usize) {
-    let typeid = to_decimal(&p[pc.inc(3)..pc.inc(3)]);
-
-    if typeid == 4 {
         let (a, b) = decode_type4(&p[pc..]);
-        (pc + a, b)
+        (pc + a, version, b)
     } else {
         let mut result = vec![];
 
         if p[pc] == 0 {
-            let l = to_decimal(&p[pc.inc(1)..pc.inc(15)]);
+            let l = to_decimal(&p[pc.inc(1)..pc.inc(15)]) as usize;
             let stop = pc + l;
 
-            while pc < stop {
-                let (npc, val) = solve2(p, pc);
+            loop {
+                let (npc, ver, val) = solve(p, pc);
+                version += ver;
                 pc = npc;
                 result.push(val);
+                if pc >= stop {
+                    break;
+                }
             }
         } else {
-            let l = to_decimal(&p[pc.inc(1)..pc.inc(11)]);
+            let l = to_decimal(&p[pc.inc(1)..pc.inc(11)]) as usize;
             for _ in 0..l {
-                let (npc, val) = solve2(p, pc);
+                let (npc, ver, val) = solve(p, pc);
+                version += ver;
                 pc = npc;
                 result.push(val);
             }
@@ -120,6 +96,7 @@ fn solve2(p: &[usize], mut pc: usize) -> (usize, usize) {
 
         (
             pc,
+            version,
             match typeid {
                 0 => result.iter().sum::<usize>(),
                 1 => result.iter().product::<usize>(),
@@ -136,12 +113,12 @@ fn solve2(p: &[usize], mut pc: usize) -> (usize, usize) {
 
 #[aoc(day16, part1)]
 pub fn part1(inputs: &[usize]) -> usize {
-    solve1(inputs, 0).1
+    solve(inputs, 0).1
 }
 
 #[aoc(day16, part2)]
 pub fn part2(inputs: &[usize]) -> usize {
-    solve2(inputs, 0).1
+    solve(inputs, 0).2
 }
 
 #[cfg(test)]
