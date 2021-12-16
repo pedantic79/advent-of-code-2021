@@ -27,67 +27,58 @@ fn bool2usize(b: bool) -> usize {
     }
 }
 
-fn decode_type4(binary: &[usize]) -> (usize, usize) {
-    let mut res = 0;
-    let mut count = 0;
+fn decode_type4(binary: &[usize], pc: &mut usize) -> usize {
+    let mut total = 0;
 
-    for w in binary.chunks(5) {
-        count += 5;
-        res = to_decimal_init(&w[1..], res);
-        if w[0] == 0 {
+    for chunk in binary.chunks(5) {
+        *pc += 5;
+        total = to_decimal_init(&chunk[1..], total);
+        if chunk[0] == 0 {
             break;
         }
     }
 
-    (count, res)
+    total
 }
 
-trait Increment {
-    fn inc(&mut self, n: Self) -> Self;
+fn get_value(program: &[usize], pc: &mut usize, n: usize) -> usize {
+    let start = *pc;
+    *pc += n;
+
+    to_decimal(&program[start..*pc])
 }
 
-impl Increment for usize {
-    fn inc(&mut self, n: Self) -> Self {
-        *self += n;
-        *self
-    }
-}
-
-fn solve(p: &[usize], mut pc: usize) -> (usize, usize, usize) {
-    let mut version = to_decimal(&p[pc..pc.inc(3)]);
-    let typeid = to_decimal(&p[pc..pc.inc(3)]);
+fn solve(program: &[usize], pc: &mut usize) -> (usize, usize) {
+    let mut version = get_value(program, pc, 3);
+    let typeid = get_value(program, pc, 3);
 
     if typeid == 4 {
-        let (a, b) = decode_type4(&p[pc..]);
-        (pc + a, version, b)
+        (version, decode_type4(&program[*pc..], pc))
     } else {
-        let mut result = vec![];
+        let mut result = Vec::new();
+        let length_id = program[*pc];
+        *pc += 1;
 
-        if p[pc] == 0 {
-            let l = to_decimal(&p[pc.inc(1)..pc.inc(15)]) as usize;
-            let stop = pc + l;
+        if length_id == 0 {
+            let length = get_value(program, pc, 15);
+            let stop = *pc + length;
 
-            loop {
-                let (npc, ver, val) = solve(p, pc);
+            while *pc < stop {
+                let (ver, val) = solve(program, pc);
                 version += ver;
-                pc = npc;
                 result.push(val);
-                if pc >= stop {
-                    break;
-                }
             }
         } else {
-            let l = to_decimal(&p[pc.inc(1)..pc.inc(11)]) as usize;
-            for _ in 0..l {
-                let (npc, ver, val) = solve(p, pc);
+            let length = get_value(program, pc, 11);
+
+            for _ in 0..length {
+                let (ver, val) = solve(program, pc);
                 version += ver;
-                pc = npc;
                 result.push(val);
             }
         }
 
         (
-            pc,
             version,
             match typeid {
                 0 => result.iter().sum::<usize>(),
@@ -105,12 +96,12 @@ fn solve(p: &[usize], mut pc: usize) -> (usize, usize, usize) {
 
 #[aoc(day16, part1)]
 pub fn part1(inputs: &[usize]) -> usize {
-    solve(inputs, 0).1
+    solve(inputs, &mut 0).0
 }
 
 #[aoc(day16, part2)]
 pub fn part2(inputs: &[usize]) -> usize {
-    solve(inputs, 0).2
+    solve(inputs, &mut 0).1
 }
 
 #[cfg(test)]
