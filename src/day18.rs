@@ -14,24 +14,77 @@ pub enum Day18 {
 }
 
 impl Day18 {
-    fn add_left(&self, b: usize) -> Self {
+    fn add_left(&mut self, b: usize) {
         match self {
-            Day18::Num(n) => Day18::Num(*n + b),
-            Day18::Pair(l, r) => Day18::Pair(Box::new(l.add_left(b)), r.clone()),
-        }
+            Day18::Num(n) => *n += b,
+            Day18::Pair(l, _) => l.add_left(b),
+        };
     }
 
-    fn add_right(&self, b: usize) -> Day18 {
+    fn add_right(&mut self, b: usize) {
         match self {
-            Day18::Num(n) => Day18::Num(*n + b),
-            Day18::Pair(l, r) => Day18::Pair(l.clone(), Box::new(r.add_right(b))),
-        }
+            Day18::Num(n) => *n += b,
+            Day18::Pair(_, r) => r.add_right(b),
+        };
     }
 
     fn magnitude(&self) -> usize {
         match self {
             Day18::Num(n) => *n,
             Day18::Pair(a, b) => 3 * a.magnitude() + 2 * b.magnitude(),
+        }
+    }
+
+    fn split(&mut self) -> bool {
+        match self {
+            Day18::Num(n) if *n < 10 => false,
+            Day18::Num(n) => {
+                let (l, r) = (*n / 2, (*n + 1) / 2);
+                *self = Day18::Pair(Box::new(Day18::Num(l)), Box::new(Day18::Num(r)));
+                true
+            }
+            Day18::Pair(a, b) => a.split() || b.split(),
+        }
+    }
+
+    fn reduce(mut self) -> Self {
+        loop {
+            // println!("{:?}", snail);
+            if self.explode(0).is_some() {
+                continue;
+            }
+
+            if !self.split() {
+                break;
+            }
+        }
+
+        self
+    }
+
+    fn explode(&mut self, depth: usize) -> Option<(usize, usize)> {
+        match self {
+            Day18::Num(_) => None,
+            Day18::Pair(a, b) => match (&mut **a, &mut **b) {
+                (Day18::Num(x), Day18::Num(y)) if depth == 4 => {
+                    let x = *x;
+                    let y = *y;
+                    *self = Day18::Num(0);
+                    Some((x, y))
+                }
+                (Day18::Num(_), Day18::Num(_)) => None,
+                (l, r) => {
+                    if let Some((lhs_left, lhs_right)) = l.explode(depth + 1) {
+                        b.add_left(lhs_right);
+                        Some((lhs_left, 0))
+                    } else if let Some((rhs_left, rhs_right)) = r.explode(depth + 1) {
+                        a.add_right(rhs_left);
+                        Some((0, rhs_right))
+                    } else {
+                        None
+                    }
+                }
+            },
         }
     }
 }
@@ -51,59 +104,8 @@ fn number(s: &str) -> IResult<&str, Day18> {
     map(digit1, |n: &str| Day18::Num(n.parse().unwrap()))(s)
 }
 
-fn explode(snail: &mut Day18, depth: usize) -> Option<(usize, usize)> {
-    match snail {
-        Day18::Num(_) => None,
-        Day18::Pair(a, b) => match (&mut **a, &mut **b) {
-            (Day18::Num(x), Day18::Num(y)) if depth == 4 => {
-                let x = *x;
-                let y = *y;
-                *snail = Day18::Num(0);
-                Some((x, y))
-            }
-            (Day18::Num(_), Day18::Num(_)) => None,
-            (l, r) => {
-                if let Some((lhs_left, lhs_right)) = explode(l, depth + 1) {
-                    *b = Box::new(b.add_left(lhs_right));
-                    Some((lhs_left, 0))
-                } else if let Some((rhs_left, rhs_right)) = explode(r, depth + 1) {
-                    *a = Box::new(a.add_right(rhs_left));
-                    Some((0, rhs_right))
-                } else {
-                    None
-                }
-            }
-        },
-    }
-}
-
-fn split(snail: &mut Day18) -> bool {
-    match snail {
-        Day18::Num(n) if *n < 10 => false,
-        Day18::Num(n) => {
-            let (l, r) = (*n / 2, (*n + 1) / 2);
-            *snail = Day18::Pair(Box::new(Day18::Num(l)), Box::new(Day18::Num(r)));
-            true
-        }
-        Day18::Pair(a, b) => split(a) || split(b),
-    }
-}
-
-fn reduce(snail: &mut Day18) {
-    loop {
-        // println!("{:?}", snail);
-        if explode(snail, 0).is_some() {
-            continue;
-        }
-
-        if !split(snail) {
-            break;
-        }
-    }
-}
-
-fn add(left: &Day18, right: &Day18) -> Day18 {
-    Day18::Pair(Box::new(left.clone()), Box::new(right.clone()))
+fn add(left: Day18, right: Day18) -> Day18 {
+    Day18::Pair(Box::new(left), Box::new(right))
 }
 
 #[aoc_generator(day18)]
@@ -113,17 +115,12 @@ pub fn generator(input: &str) -> Vec<Day18> {
 
 #[aoc(day18, part1)]
 pub fn part1(inputs: &[Day18]) -> usize {
-    let a = inputs
+    inputs
         .iter()
         .cloned()
-        .reduce(|acc, snailfish| {
-            let mut state = add(&acc, &snailfish);
-            reduce(&mut state);
-            state
-        })
-        .unwrap();
-
-    a.magnitude()
+        .reduce(|acc, snailfish| add(acc, snailfish).reduce())
+        .unwrap()
+        .magnitude()
 }
 
 #[aoc(day18, part2)]
@@ -135,9 +132,7 @@ pub fn part2(inputs: &[Day18]) -> usize {
             if a == b {
                 continue;
             }
-            let mut temp = add(a, b);
-            reduce(&mut temp);
-            max = max.max(temp.magnitude())
+            max = max.max(add(a.clone(), b.clone()).reduce().magnitude())
         }
     }
 
