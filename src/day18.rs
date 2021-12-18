@@ -1,78 +1,80 @@
+use std::{convert::Infallible, str::FromStr};
+
 use aoc_runner_derive::{aoc, aoc_generator};
 use nom::{
     branch::alt,
     character::complete::{char, digit1},
-    combinator::map,
+    combinator::{all_consuming, map},
     sequence::{delimited, separated_pair},
     IResult,
 };
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Day18 {
+pub enum Snail {
     Num(usize),
-    Pair(Box<Day18>, Box<Day18>),
+    Pair(Box<Snail>, Box<Snail>),
 }
 
-impl Day18 {
+impl From<usize> for Snail {
+    fn from(n: usize) -> Self {
+        Snail::Num(n)
+    }
+}
+
+impl Snail {
+    fn new<I: Into<Snail>>(left: I, right: I) -> Self {
+        Self::Pair(Box::new(left.into()), Box::new(right.into()))
+    }
+
     fn add_left(&mut self, b: usize) {
         match self {
-            Day18::Num(n) => *n += b,
-            Day18::Pair(l, _) => l.add_left(b),
+            Snail::Num(n) => *n += b,
+            Snail::Pair(l, _) => l.add_left(b),
         };
     }
 
     fn add_right(&mut self, b: usize) {
         match self {
-            Day18::Num(n) => *n += b,
-            Day18::Pair(_, r) => r.add_right(b),
+            Snail::Num(n) => *n += b,
+            Snail::Pair(_, r) => r.add_right(b),
         };
     }
 
     fn magnitude(&self) -> usize {
         match self {
-            Day18::Num(n) => *n,
-            Day18::Pair(a, b) => 3 * a.magnitude() + 2 * b.magnitude(),
+            Snail::Num(n) => *n,
+            Snail::Pair(a, b) => 3 * a.magnitude() + 2 * b.magnitude(),
         }
     }
 
     fn split(&mut self) -> bool {
         match self {
-            Day18::Num(n) if *n < 10 => false,
-            Day18::Num(n) => {
-                let (l, r) = (*n / 2, (*n + 1) / 2);
-                *self = Day18::Pair(Box::new(Day18::Num(l)), Box::new(Day18::Num(r)));
+            Snail::Num(n) if *n < 10 => false,
+            Snail::Num(n) => {
+                *self = Snail::new(*n / 2, (*n + 1) / 2);
                 true
             }
-            Day18::Pair(a, b) => a.split() || b.split(),
+            Snail::Pair(a, b) => a.split() || b.split(),
         }
     }
 
     fn reduce(mut self) -> Self {
-        loop {
-            // println!("{:?}", snail);
-            if self.explode(0).is_some() {
-                continue;
-            }
-
-            if !self.split() {
-                break;
-            }
-        }
+        while self.explode(0).is_some() || self.split() {}
 
         self
     }
 
     fn explode(&mut self, depth: usize) -> Option<(usize, usize)> {
         match self {
-            Day18::Num(_) => None,
-            Day18::Pair(a, b) => match (&mut **a, &mut **b) {
-                (Day18::Num(x), Day18::Num(y)) if depth == 4 => {
+            Snail::Num(_) => None,
+            Snail::Pair(a, b) => match (a.as_mut(), b.as_mut()) {
+                (Snail::Num(x), Snail::Num(y)) if depth == 4 => {
                     let x = *x;
                     let y = *y;
-                    *self = Day18::Num(0);
+                    *self = Snail::Num(0);
                     Some((x, y))
                 }
-                (Day18::Num(_), Day18::Num(_)) => None,
+                (Snail::Num(_), Snail::Num(_)) => None,
                 (l, r) => {
                     if let Some((lhs_left, lhs_right)) = l.explode(depth + 1) {
                         b.add_left(lhs_right);
@@ -89,32 +91,43 @@ impl Day18 {
     }
 }
 
-fn parse(s: &str) -> IResult<&str, Day18> {
+impl FromStr for Snail {
+    // BAD, we should really use a nom::Err<nom::error::Error<&str>>>
+    // but without stable generic associated types, we can't make this work
+    type Err = Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (_, x) = all_consuming(parse)(s).unwrap();
+        Ok(x)
+    }
+}
+
+fn parse(s: &str) -> IResult<&str, Snail> {
     delimited(char('['), pair, char(']'))(s)
 }
 
-fn pair(s: &str) -> IResult<&str, Day18> {
+fn pair(s: &str) -> IResult<&str, Snail> {
     map(
         separated_pair(alt((number, parse)), char(','), alt((number, parse))),
-        |(left, right)| Day18::Pair(Box::new(left), Box::new(right)),
+        |(left, right)| Snail::new(left, right),
     )(s)
 }
 
-fn number(s: &str) -> IResult<&str, Day18> {
-    map(digit1, |n: &str| Day18::Num(n.parse().unwrap()))(s)
+fn number(s: &str) -> IResult<&str, Snail> {
+    map(digit1, |n: &str| Snail::Num(n.parse().unwrap()))(s)
 }
 
-fn add(left: Day18, right: Day18) -> Day18 {
-    Day18::Pair(Box::new(left), Box::new(right))
+fn add(left: Snail, right: Snail) -> Snail {
+    Snail::new(left, right)
 }
 
 #[aoc_generator(day18)]
-pub fn generator(input: &str) -> Vec<Day18> {
-    input.lines().map(|x| parse(x).unwrap().1).collect()
+pub fn generator(input: &str) -> Vec<Snail> {
+    input.lines().map(|x| x.parse().unwrap()).collect()
 }
 
 #[aoc(day18, part1)]
-pub fn part1(inputs: &[Day18]) -> usize {
+pub fn part1(inputs: &[Snail]) -> usize {
     inputs
         .iter()
         .cloned()
@@ -124,7 +137,7 @@ pub fn part1(inputs: &[Day18]) -> usize {
 }
 
 #[aoc(day18, part2)]
-pub fn part2(inputs: &[Day18]) -> usize {
+pub fn part2(inputs: &[Snail]) -> usize {
     let mut max = 0;
 
     for a in inputs.iter() {
