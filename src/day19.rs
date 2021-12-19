@@ -75,9 +75,15 @@ impl Coord3 {
 }
 
 #[derive(Hash, PartialEq, Eq, Clone, Default, Debug)]
-pub struct Scanner(Vec<Coord3>);
+pub struct Scanner {
+    beacons: Vec<Coord3>,
+}
 
 impl Scanner {
+    fn new(beacons: Vec<Coord3>) -> Self {
+        Self { beacons }
+    }
+
     fn transforms(&self) -> [Scanner; 24] {
         let mut res = [
             Scanner::default(),
@@ -106,9 +112,9 @@ impl Scanner {
             Scanner::default(),
         ];
 
-        for beacon in self.0.iter().map(|b| b.transforms()) {
+        for beacon in self.beacons.iter().map(|b| b.transforms()) {
             for (i, b) in beacon.iter().enumerate() {
-                res[i].0.push(*b);
+                res[i].beacons.push(*b);
             }
         }
 
@@ -123,7 +129,7 @@ fn parse_vector(s: &str) -> Coord3 {
 }
 
 fn parse_chunk(s: &str) -> Scanner {
-    Scanner(s.lines().skip(1).map(parse_vector).collect())
+    Scanner::new(s.lines().skip(1).map(parse_vector).collect())
 }
 
 #[aoc_generator(day19)]
@@ -146,17 +152,18 @@ fn solve(fixed: &[Scanner], scanners: &[Scanner]) -> Option<(Coord3, Scanner, us
 }
 
 fn merge(t: &Scanner, r: &Scanner) -> Option<(Coord3, Scanner)> {
-    let nt = t.0.clone();
+    let nt = t.beacons.clone();
 
-    for d in
-        t.0.iter()
-            .cartesian_product(r.0.iter())
-            .map(|(&t, &c)| t - c)
+    for d in t
+        .beacons
+        .iter()
+        .cartesian_product(r.beacons.iter())
+        .map(|(&t, &c)| t - c)
     {
         let mut count = 0;
-        let mut remain = r.0.len();
+        let mut remain = r.beacons.len();
 
-        for c in r.0.iter() {
+        for c in r.beacons.iter() {
             let v: Coord3 = *c + d;
             remain -= 1;
 
@@ -164,7 +171,7 @@ fn merge(t: &Scanner, r: &Scanner) -> Option<(Coord3, Scanner)> {
                 count += 1;
 
                 if count == 12 {
-                    let ns = Scanner(r.0.iter().map(|&c| c + d).collect());
+                    let ns = Scanner::new(r.beacons.iter().map(|&c| c + d).collect());
 
                     return Some((d, ns));
                 }
@@ -182,11 +189,11 @@ fn merge(t: &Scanner, r: &Scanner) -> Option<(Coord3, Scanner)> {
 #[aoc(day19, part1)]
 pub fn part1(inputs: &[Scanner]) -> usize {
     let mut inputs = inputs.to_vec();
-    let mut beacons = inputs[0].0.iter().copied().collect::<HashSet<_>>();
+    let mut beacons = inputs[0].beacons.iter().copied().collect::<HashSet<_>>();
     let mut pos = 1;
 
     while let Some((_, ns, i)) = solve(&inputs[..pos], &inputs[pos..]) {
-        beacons.extend(ns.0.iter().copied());
+        beacons.extend(ns.beacons.iter().copied());
 
         inputs[pos + i] = ns;
         inputs.swap(pos + i, pos);
