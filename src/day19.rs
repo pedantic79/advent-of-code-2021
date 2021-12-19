@@ -7,7 +7,7 @@ use std::{
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 type C = i32;
 
@@ -123,10 +123,7 @@ fn parse_vector(s: &str) -> Coord3 {
 }
 
 fn parse_chunk(s: &str) -> Scanner {
-    let mut it = s.lines();
-    it.next();
-
-    Scanner(it.map(parse_vector).collect())
+    Scanner(s.lines().skip(1).map(parse_vector).collect())
 }
 
 #[aoc_generator(day19)]
@@ -142,7 +139,7 @@ fn solve(
     (0..scanners.len()).find_map(|i| {
         scanners[i]
             .transforms()
-            .into_par_iter()
+            .par_iter()
             .find_map_any(|r| merge(total, &r))
             .map(|(d, s)| (d, s, i))
     })
