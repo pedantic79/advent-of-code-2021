@@ -11,8 +11,20 @@ use rayon::iter::{ParallelBridge, ParallelIterator};
 
 type C = i32;
 
-#[derive(PartialEq, Eq, Clone, Copy, Hash, PartialOrd, Ord)]
+#[derive(Eq, Clone, Copy, PartialOrd, Ord)]
 pub struct Coord3(C, C, C);
+
+impl Hash for Coord3 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_i32(self.0 ^ self.1 ^ self.2);
+    }
+}
+
+impl PartialEq for Coord3 {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0 && self.1 == other.1 && self.2 == other.2
+    }
+}
 
 impl Display for Coord3 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
