@@ -7,7 +7,7 @@ use std::{
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
+use rayon::iter::{ParallelBridge, ParallelIterator};
 
 type C = i32;
 
@@ -135,7 +135,8 @@ pub fn generator(input: &str) -> Vec<Scanner> {
 fn solve(fixed: &[Scanner], scanners: &[Scanner]) -> Option<(Coord3, Scanner, usize)> {
     (0..scanners.len())
         .cartesian_product(0..fixed.len())
-        .find_map(|(si, fi)| {
+        .par_bridge()
+        .find_map_any(|(si, fi)| {
             scanners[si]
                 .transforms()
                 .iter()
