@@ -7,6 +7,7 @@ use std::{
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 type C = i32;
 
@@ -141,29 +142,40 @@ fn solve(
     (0..scanners.len()).find_map(|i| {
         scanners[i]
             .transforms()
-            .iter()
-            .find_map(|r| merge(total, r))
-            .map(|(d, m)| (d, m, i))
+            .into_par_iter()
+            .find_map_any(|r| merge(total, &r))
+            .map(|(d, s)| (d, s, i))
     })
 }
 
 fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> {
-    let mut set_t = t.clone();
+    let mut nt = t.clone();
 
-    for d in set_t
+    for d in nt
         .iter()
         .cartesian_product(r.0.iter())
         .map(|(&t, &c)| t - c)
     {
-        let count =
-            r.0.iter()
-                .map(|&c| c + d)
-                .filter(|v| set_t.contains(v))
-                .count();
-        if count >= 12 {
-            set_t.extend(r.0.iter().map(|&c| c + d));
+        let mut count = 0;
+        let mut remain = r.0.len();
 
-            return Some((d, set_t));
+        for c in r.0.iter() {
+            let v: Coord3 = *c + d;
+            remain -= 1;
+
+            if t.contains(&v) {
+                count += 1;
+
+                if count == 12 {
+                    nt.extend(r.0.iter().map(|&c| c + d));
+
+                    return Some((d, nt));
+                }
+            } else if remain + count < 12 {
+                // We can't ever reach 12, so stop
+
+                break;
+            }
         }
     }
 
@@ -172,11 +184,11 @@ fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> 
 
 #[aoc(day19, part1)]
 pub fn part1(inputs: &[Scanner]) -> usize {
-    let mut inputs = inputs.to_owned();
+    let mut inputs: Vec<_> = inputs.iter().rev().cloned().collect();
 
     let mut t = inputs.pop().unwrap().0.into_iter().collect();
-    while let Some((_, new_t, i)) = solve(&inputs, &t) {
-        t = new_t;
+    while let Some((_, nt, i)) = solve(&inputs, &t) {
+        t = nt;
         inputs.swap_remove(i);
     }
 
@@ -185,12 +197,12 @@ pub fn part1(inputs: &[Scanner]) -> usize {
 
 #[aoc(day19, part2)]
 pub fn part2(inputs: &[Scanner]) -> C {
-    let mut inputs = inputs.to_owned();
+    let mut inputs: Vec<_> = inputs.iter().rev().cloned().collect();
     let mut dists = Vec::new();
 
     let mut t = inputs.pop().unwrap().0.into_iter().collect();
-    while let Some((dist, new_t, i)) = solve(&inputs, &t) {
-        t = new_t;
+    while let Some((dist, nt, i)) = solve(&inputs, &t) {
+        t = nt;
         inputs.swap_remove(i);
         dists.push(dist);
     }
