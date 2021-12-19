@@ -1,5 +1,4 @@
 use std::{
-    collections::HashSet,
     fmt::{Debug, Display},
     hash::Hash,
     ops::{Add, Sub},
@@ -8,6 +7,7 @@ use std::{
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use rustc_hash::FxHashSet;
 
 type C = i32;
 
@@ -146,18 +146,18 @@ pub fn generator(input: &str) -> Vec<Scanner> {
 
 fn solve(
     scanners: &[Scanner],
-    total: &HashSet<Coord3>,
-) -> Option<(Coord3, HashSet<Coord3>, usize)> {
+    total: &FxHashSet<Coord3>,
+) -> Option<(Coord3, FxHashSet<Coord3>, usize)> {
     (0..scanners.len()).find_map(|i| {
         scanners[i]
             .transforms()
             .par_iter()
-            .find_map_any(|r| merge(total, &r))
+            .find_map_any(|r| merge(total, r))
             .map(|(d, s)| (d, s, i))
     })
 }
 
-fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> {
+fn merge(t: &FxHashSet<Coord3>, r: &Scanner) -> Option<(Coord3, FxHashSet<Coord3>)> {
     let mut nt = t.clone();
 
     for d in nt
