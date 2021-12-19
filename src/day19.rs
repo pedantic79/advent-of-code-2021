@@ -7,7 +7,7 @@ use std::{
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 type C = i32;
 
@@ -74,7 +74,7 @@ impl Coord3 {
     }
 }
 
-#[derive(Hash, PartialEq, Eq, Clone, Default)]
+#[derive(Hash, PartialEq, Eq, Clone, Default, Debug)]
 pub struct Scanner(Vec<Coord3>);
 
 impl Scanner {
@@ -123,10 +123,7 @@ fn parse_vector(s: &str) -> Coord3 {
 }
 
 fn parse_chunk(s: &str) -> Scanner {
-    let mut it = s.lines();
-    it.next();
-
-    Scanner(it.map(parse_vector).collect())
+    Scanner(s.lines().skip(1).map(parse_vector).collect())
 }
 
 #[aoc_generator(day19)]
@@ -135,26 +132,25 @@ pub fn generator(input: &str) -> Vec<Scanner> {
     chunk.map(parse_chunk).collect()
 }
 
-fn solve(
-    scanners: &[Scanner],
-    total: &HashSet<Coord3>,
-) -> Option<(Coord3, HashSet<Coord3>, usize)> {
-    (0..scanners.len()).find_map(|i| {
-        scanners[i]
-            .transforms()
-            .into_par_iter()
-            .find_map_any(|r| merge(total, &r))
-            .map(|(d, s)| (d, s, i))
-    })
+fn solve(fixed: &[Scanner], scanners: &[Scanner]) -> Option<(Coord3, Scanner, usize)> {
+    (0..scanners.len())
+        .cartesian_product(0..fixed.len())
+        .find_map(|(si, fi)| {
+            scanners[si]
+                .transforms()
+                .iter()
+                .find_map(|r| merge(&fixed[fi], r))
+                .map(|(d, s)| (d, s, si))
+        })
 }
 
-fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> {
-    let mut nt = t.clone();
+fn merge(t: &Scanner, r: &Scanner) -> Option<(Coord3, Scanner)> {
+    let nt = t.0.clone();
 
-    for d in nt
-        .iter()
-        .cartesian_product(r.0.iter())
-        .map(|(&t, &c)| t - c)
+    for d in
+        t.0.iter()
+            .cartesian_product(r.0.iter())
+            .map(|(&t, &c)| t - c)
     {
         let mut count = 0;
         let mut remain = r.0.len();
@@ -163,13 +159,13 @@ fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> 
             let v: Coord3 = *c + d;
             remain -= 1;
 
-            if t.contains(&v) {
+            if nt.contains(&v) {
                 count += 1;
 
                 if count == 12 {
-                    nt.extend(r.0.iter().map(|&c| c + d));
+                    let ns = Scanner(r.0.iter().map(|&c| c + d).collect());
 
-                    return Some((d, nt));
+                    return Some((d, ns));
                 }
             } else if remain + count < 12 {
                 // We can't ever reach 12, so stop
@@ -184,27 +180,35 @@ fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> 
 
 #[aoc(day19, part1)]
 pub fn part1(inputs: &[Scanner]) -> usize {
-    let mut inputs: Vec<_> = inputs.iter().rev().cloned().collect();
+    let mut inputs = inputs.to_vec();
+    let mut beacons = inputs[0].0.iter().copied().collect::<HashSet<_>>();
+    let mut pos = 1;
 
-    let mut t = inputs.pop().unwrap().0.into_iter().collect();
-    while let Some((_, nt, i)) = solve(&inputs, &t) {
-        t = nt;
-        inputs.swap_remove(i);
+    while let Some((_, ns, i)) = solve(&inputs[..pos], &inputs[pos..]) {
+        beacons.extend(ns.0.iter().copied());
+
+        inputs[pos + i] = ns;
+        inputs.swap(pos + i, pos);
+
+        pos += 1;
     }
 
-    t.len()
+    beacons.len()
 }
 
 #[aoc(day19, part2)]
 pub fn part2(inputs: &[Scanner]) -> C {
-    let mut inputs: Vec<_> = inputs.iter().rev().cloned().collect();
+    let mut inputs = inputs.to_vec();
     let mut dists = Vec::new();
+    let mut pos = 1;
 
-    let mut t = inputs.pop().unwrap().0.into_iter().collect();
-    while let Some((dist, nt, i)) = solve(&inputs, &t) {
-        t = nt;
-        inputs.swap_remove(i);
-        dists.push(dist);
+    while let Some((d, ns, i)) = solve(&inputs[..pos], &inputs[pos..]) {
+        dists.push(d);
+
+        inputs[pos + i] = ns;
+        inputs.swap(pos + i, pos);
+
+        pos += 1;
     }
 
     dists
