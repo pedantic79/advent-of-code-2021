@@ -8,18 +8,48 @@ type Coord = (isize, isize);
 #[derive(Debug, PartialEq)]
 pub struct Day20 {
     enhancement: Vec<bool>,
-    image: HashSet<Coord>,
+    image: Image,
 }
 
-fn convert(c: char) -> bool {
-    c == '#'
+#[derive(Debug, PartialEq, Clone)]
+struct Image {
+    image: HashSet<Coord>,
+    min_x: isize,
+    min_y: isize,
+    max_x: isize,
+    max_y: isize,
+}
+
+impl Image {
+    fn get(&self, p: Coord, flip: bool) -> bool {
+        (flip && (p.0 < self.min_y || p.0 > self.max_y || p.1 < self.min_x || p.1 > self.max_x))
+            || self.image.contains(&p)
+    }
+
+    fn extract_zone(&self, row: isize, col: isize, flip: bool) -> usize {
+        [
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
+            (0, -1),
+            (0, 0),
+            (0, 1),
+            (1, -1),
+            (1, 0),
+            (1, 1),
+        ]
+        .iter()
+        .map(|(dy, dx)| (row + dy, col + dx))
+        .map(|p| if self.get(p, flip) { 1 } else { 0 })
+        .fold(0, |acc, n| acc * 2 + n)
+    }
 }
 
 #[aoc_generator(day20)]
 pub fn generator(input: &str) -> Day20 {
     let (a, b) = input.split_once("\n\n").unwrap();
-    let enhancement: Vec<_> = a.chars().map(convert).collect();
-    assert_eq!(enhancement.len(), 512);
+    let enhancement: Vec<_> = a.chars().map(|c| c == '#').collect();
+
     let image = b
         .lines()
         .enumerate()
@@ -32,36 +62,8 @@ pub fn generator(input: &str) -> Day20 {
                 }
             })
         })
-        .collect();
+        .collect::<HashSet<_>>();
 
-    Day20 { enhancement, image }
-}
-
-fn extract_zone(
-    image: &HashSet<Coord>,
-    row: isize,
-    col: isize,
-    get: impl Fn(&HashSet<Coord>, Coord) -> bool,
-) -> usize {
-    [
-        (-1, -1),
-        (-1, 0),
-        (-1, 1),
-        (0, -1),
-        (0, 0),
-        (0, 1),
-        (1, -1),
-        (1, 0),
-        (1, 1),
-    ]
-    .iter()
-    .map(|(dy, dx)| (row + dy, col + dx))
-    .map(|p| if get(image, p) { 1 } else { 0 })
-    .fold(0, |acc, n| acc * 2 + n)
-}
-
-fn tick(lookup: &[bool], image: &HashSet<Coord>, flip: bool) -> HashSet<Coord> {
-    let mut new_image = HashSet::new();
     let (min_y, max_y) = image
         .iter()
         .map(|(y, _)| *y)
@@ -75,17 +77,24 @@ fn tick(lookup: &[bool], image: &HashSet<Coord>, flip: bool) -> HashSet<Coord> {
         .into_option()
         .unwrap();
 
-    let get = |image: &HashSet<Coord>, p: Coord| {
-        if lookup[0] && flip && (p.0 < min_y || p.0 > max_y || p.1 < min_x || p.1 > max_x) {
-            true
-        } else {
-            image.contains(&p)
-        }
-    };
+    Day20 {
+        enhancement,
+        image: Image {
+            image,
+            min_x,
+            min_y,
+            max_x,
+            max_y,
+        },
+    }
+}
 
-    for y in (min_y - 1)..=(max_y + 1) {
-        for x in (min_x - 1)..=(max_x + 1) {
-            let pos = extract_zone(image, y, x, get);
+fn tick(lookup: &[bool], image: &Image, flip: bool) -> Image {
+    let mut new_image = HashSet::new();
+
+    for y in (image.min_y - 1)..=(image.max_y + 1) {
+        for x in (image.min_x - 1)..=(image.max_x + 1) {
+            let pos = image.extract_zone(y, x, lookup[0] && flip);
 
             if lookup[pos] {
                 new_image.insert((y, x));
@@ -93,27 +102,32 @@ fn tick(lookup: &[bool], image: &HashSet<Coord>, flip: bool) -> HashSet<Coord> {
         }
     }
 
-    new_image
+    Image {
+        image: new_image,
+        min_x: image.min_x - 1,
+        max_x: image.max_x + 1,
+        min_y: image.min_y - 1,
+        max_y: image.max_y + 1,
+    }
+}
+
+fn solve<const N: usize>(inputs: &Day20) -> usize {
+    let mut image = inputs.image.clone();
+
+    for x in 0..N {
+        image = tick(&inputs.enhancement, &image, x % 2 == 1);
+    }
+    image.image.len()
 }
 
 #[aoc(day20, part1)]
 pub fn part1(inputs: &Day20) -> usize {
-    let mut image = inputs.image.clone();
-
-    image = tick(&inputs.enhancement, &image, false);
-    image = tick(&inputs.enhancement, &image, true);
-
-    image.len()
+    solve::<2>(inputs)
 }
 
 #[aoc(day20, part2)]
 pub fn part2(inputs: &Day20) -> usize {
-    let mut image = inputs.image.clone();
-
-    for x in 0..50 {
-        image = tick(&inputs.enhancement, &image, x % 2 == 1);
-    }
-    image.len()
+    solve::<50>(inputs)
 }
 
 #[cfg(test)]
@@ -139,7 +153,7 @@ mod tests {
     pub fn test_extract() {
         let d = generator(SAMPLE);
 
-        assert_eq!(extract_zone(&d.image, 2, 2, |img, p| img.contains(&p)), 34)
+        assert_eq!(extract_zone(&d.image, 2, 2, false), 34)
     }
 
     #[test]
