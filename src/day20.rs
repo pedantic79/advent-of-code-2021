@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 
 use aoc_runner_derive::{aoc, aoc_generator};
-use itertools::Itertools;
 
 type Coord = (isize, isize);
 
@@ -64,18 +63,8 @@ pub fn generator(input: &str) -> Day20 {
         })
         .collect::<HashSet<_>>();
 
-    let (min_y, max_y) = image
-        .iter()
-        .map(|(y, _)| *y)
-        .minmax()
-        .into_option()
-        .unwrap();
-    let (min_x, max_x) = image
-        .iter()
-        .map(|(_, x)| *x)
-        .minmax()
-        .into_option()
-        .unwrap();
+    let (min_y, max_y) = (0, b.lines().next().unwrap().len() as isize);
+    let (min_x, max_x) = (min_y, b.lines().count() as isize);
 
     Day20 {
         enhancement,
@@ -167,7 +156,7 @@ mod tests {
 
     #[test]
     pub fn test2() {
-        // assert_eq!(part2(&generator(SAMPLE)), 336);
+        assert_eq!(part2(&generator(SAMPLE)), 3351);
     }
 
     mod regression {
