@@ -91,9 +91,13 @@ pub fn generator(input: &str) -> Day20 {
 
 fn tick(lookup: &[bool], image: &Image, flip: bool) -> Image {
     let mut new_image = HashSet::new();
+    let min_y = image.min_y - 1;
+    let max_y = image.max_y + 1;
+    let min_x = image.min_x - 1;
+    let max_x = image.max_x + 1;
 
-    for y in (image.min_y - 1)..=(image.max_y + 1) {
-        for x in (image.min_x - 1)..=(image.max_x + 1) {
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
             let pos = image.extract_zone(y, x, lookup[0] && flip);
 
             if lookup[pos] {
@@ -104,10 +108,10 @@ fn tick(lookup: &[bool], image: &Image, flip: bool) -> Image {
 
     Image {
         image: new_image,
-        min_x: image.min_x - 1,
-        max_x: image.max_x + 1,
-        min_y: image.min_y - 1,
-        max_y: image.max_y + 1,
+        min_x,
+        max_x,
+        min_y,
+        max_y,
     }
 }
 
@@ -153,7 +157,7 @@ mod tests {
     pub fn test_extract() {
         let d = generator(SAMPLE);
 
-        assert_eq!(extract_zone(&d.image, 2, 2, false), 34)
+        assert_eq!(d.image.extract_zone(2, 2, false), 34)
     }
 
     #[test]
