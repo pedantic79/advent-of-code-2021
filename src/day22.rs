@@ -43,29 +43,27 @@ impl FromStr for Cuboid {
 
 impl Cuboid {
     fn count(&self, others: &[Self]) -> isize {
-        let mut total = self.volume();
-        let mut conflicts = Vec::new();
+        let conflicts = others
+            .iter()
+            .filter_map(|item| {
+                let cx = range_overlap(item.x, self.x)?;
+                let cy = range_overlap(item.y, self.y)?;
+                let cz = range_overlap(item.z, self.z)?;
 
-        for item in others {
-            if let Some(cx) = range_overlap(item.x, self.x) {
-                if let Some(cy) = range_overlap(item.y, self.y) {
-                    if let Some(cz) = range_overlap(item.z, self.z) {
-                        conflicts.push(Cuboid {
-                            kind: !item.kind, // This doesn't matter
-                            x: cx,
-                            y: cy,
-                            z: cz,
-                        });
-                    }
-                }
-            }
-        }
+                Some(Cuboid {
+                    kind: !item.kind, // This doesn't matter
+                    x: cx,
+                    y: cy,
+                    z: cz,
+                })
+            })
+            .collect::<Vec<_>>();
 
-        for (idx, item) in conflicts.iter().enumerate() {
-            total -= item.count(&conflicts[idx + 1..]);
-        }
-
-        total
+        conflicts
+            .iter()
+            .enumerate()
+            .map(|(idx, item)| item.count(&conflicts[idx + 1..]))
+            .fold(self.volume(), |total, remove| total - remove)
     }
 
     fn volume(&self) -> isize {
