@@ -1,4 +1,4 @@
-use std::{collections::HashSet, convert::Infallible, str::FromStr};
+use std::{convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
@@ -51,7 +51,7 @@ impl Cuboid {
                 if let Some(cy) = range_overlap(item.y, self.y) {
                     if let Some(cz) = range_overlap(item.z, self.z) {
                         conflicts.push(Cuboid {
-                            kind: item.kind,
+                            kind: !item.kind, // This doesn't matter
                             x: cx,
                             y: cy,
                             z: cz,
@@ -91,27 +91,22 @@ pub fn generator(input: &str) -> Vec<Cuboid> {
 }
 
 #[aoc(day22, part1)]
-pub fn part1(inputs: &[Cuboid]) -> usize {
-    let mut points = HashSet::new();
-    for cuboid in inputs {
-        'outer: for x in cuboid.x.0..=cuboid.x.1 {
-            for y in cuboid.y.0..=cuboid.y.1 {
-                for z in cuboid.z.0..=cuboid.z.1 {
-                    if x.abs() > 50 || y.abs() > 50 || z.abs() > 50 {
-                        break 'outer;
-                    }
-
-                    if cuboid.kind {
-                        points.insert((x, y, z));
-                    } else {
-                        points.remove(&(x, y, z));
-                    }
-                }
+pub fn part1(inputs: &[Cuboid]) -> isize {
+    inputs
+        .iter()
+        .enumerate()
+        .filter(|c| c.1.kind)
+        .filter_map(|(i, cuboid)| {
+            if [cuboid.x, cuboid.y, cuboid.z]
+                .iter()
+                .all(|r| range_overlap(*r, (-50, 50)).is_some())
+            {
+                Some(cuboid.count(&inputs[i + 1..]))
+            } else {
+                None
             }
-        }
-    }
-
-    points.len()
+        })
+        .sum()
 }
 
 #[aoc(day22, part2)]
@@ -226,14 +221,14 @@ off x=-93533..-4276,y=-16170..68771,z=-104985..-24507";
 
     #[test]
     pub fn test2() {
-        assert_eq!(part2(&generator(SAMPLE2)), 2758514936282235);
+        assert_eq!(part2(&generator(SAMPLE2)), 2_758_514_936_282_235);
     }
 
     mod regression {
         use super::*;
 
         const INPUT: &str = include_str!("../input/2021/day22.txt");
-        const ANSWERS: (usize, isize) = (648023, 1285677377848549);
+        const ANSWERS: (isize, isize) = (648023, 1_285_677_377_848_549);
 
         #[test]
         pub fn test() {
