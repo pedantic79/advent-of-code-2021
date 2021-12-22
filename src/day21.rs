@@ -1,39 +1,60 @@
-use std::collections::HashMap;
-
 use aoc_runner_derive::{aoc, aoc_generator};
+use rustc_hash::FxHashMap;
 
 use crate::utils::build_array;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Default)]
 pub struct Player {
-    pos: usize,
-    score: usize,
+    pos: u8,
+    score: u16,
 }
 
 struct Dice {
     last: usize,
+    count: usize,
 }
 
 impl Dice {
+    fn new() -> Self {
+        Self { last: 7, count: 0 }
+    }
+
     fn roll(&mut self) -> usize {
-        self.last = self.last % 100 + 1;
+        self.count += 3;
+
+        self.last -= 1;
+        if self.last == 0 {
+            self.last = 10;
+        }
 
         self.last
+    }
+
+    fn count(&self) -> usize {
+        self.count
     }
 }
 
 impl Player {
-    fn new(pos: usize) -> Self {
-        Player { pos, score: 0 }
+    fn new(pos: u8) -> Self {
+        Self { pos, score: 0 }
+    }
+
+    fn new_with_score(pos: u8, score: u16) -> Self {
+        Self { pos, score }
     }
 
     fn tick(&mut self, dice: &mut Dice) {
-        let n = dice.roll() + dice.roll() + dice.roll();
-        self.pos += n;
-        while self.pos > 10 {
-            self.pos -= 10;
-        }
-        self.score += self.pos;
+        self.pos = Self::inc_pos(self.pos + Self::roll(dice));
+        self.score += u16::from(self.pos);
+    }
+
+    fn roll(dice: &mut Dice) -> u8 {
+        dice.roll() as u8
+    }
+
+    fn inc_pos(pos: u8) -> u8 {
+        (pos - 1) % 10 + 1
     }
 }
 
@@ -50,21 +71,17 @@ pub fn generator(input: &str) -> [Player; 2] {
 pub fn part1(inputs: &[Player; 2]) -> usize {
     let mut player1 = inputs[0];
     let mut player2 = inputs[1];
-    let mut dice = Dice { last: 0 };
+    let mut dice = Dice::new();
 
-    let mut count = 0;
     for _ in 1.. {
         player1.tick(&mut dice);
-        count += 3;
-
         if player1.score >= 1000 {
-            return player2.score * count;
+            return usize::from(player2.score) * dice.count();
         }
 
         player2.tick(&mut dice);
-        count += 3;
         if player2.score >= 1000 {
-            return player1.score * count;
+            return usize::from(player1.score) * dice.count();
         }
     }
 
@@ -72,7 +89,7 @@ pub fn part1(inputs: &[Player; 2]) -> usize {
 }
 
 fn solve2(
-    memo: &mut HashMap<(Player, Player), (usize, usize)>,
+    memo: &mut FxHashMap<(Player, Player), (usize, usize)>,
     player1: Player,
     player2: Player,
 ) -> (usize, usize) {
@@ -87,14 +104,11 @@ fn solve2(
 
     let (mut ways1, mut ways2) = (0, 0);
     for (dice, ways) in [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)] {
-        let pos = (player1.pos + dice - 1) % 10 + 1;
+        let pos = Player::inc_pos(player1.pos + dice);
         let (v2, v1) = solve2(
             memo,
             player2,
-            Player {
-                pos,
-                score: player1.score + pos,
-            },
+            Player::new_with_score(pos, player1.score + u16::from(pos)),
         );
         ways1 += v1 * ways;
         ways2 += v2 * ways;
@@ -106,7 +120,7 @@ fn solve2(
 
 #[aoc(day21, part2)]
 pub fn part2(inputs: &[Player]) -> usize {
-    solve2(&mut HashMap::new(), inputs[0], inputs[1]).0
+    solve2(&mut FxHashMap::default(), inputs[0], inputs[1]).0
 }
 
 #[cfg(test)]
@@ -121,6 +135,15 @@ Player 2 starting position: 8";
         println!("{:?}", generator(SAMPLE));
 
         // assert_eq!(generator(SAMPLE), Object());
+        use itertools::Itertools;
+
+        let v: Vec<_> = (1..=100).cycle().take(300).collect_vec();
+        let mut a = Vec::new();
+
+        for chunk in &v.into_iter().chunks(3) {
+            a.push((chunk.sum::<i32>() - 1) % 10 + 1);
+        }
+        println!("{:?}", a);
     }
 
     #[test]
