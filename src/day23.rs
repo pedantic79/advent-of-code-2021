@@ -128,12 +128,12 @@ impl Hallway {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct Room {
-    slots: [Amphipod; 4],
+pub struct Room<const SIZE: usize> {
+    slots: [Amphipod; SIZE],
     kind: Amphipod,
 }
 
-impl Room {
+impl<const SIZE: usize> Room<SIZE> {
     // Checks to see if Room is ready to accept an Amphipod
     fn is_ready(&self) -> bool {
         let mut state = Amphipod::Empty;
@@ -157,7 +157,7 @@ impl Room {
         self.slots.iter().all(|&amphipod| amphipod == self.kind)
     }
 
-    fn get_top(&self) -> Option<(Amphipod, Room, usize)> {
+    fn get_top(&self) -> Option<(Amphipod, Self, usize)> {
         for (i, &amphipod) in self.slots.iter().enumerate() {
             if amphipod != Amphipod::Empty {
                 let mut new_room = *self;
@@ -183,12 +183,12 @@ impl Room {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct Map {
+pub struct Map<const SIZE: usize> {
     hallway: Hallway,
-    rooms: [Room; 4],
+    rooms: [Room<SIZE>; 4],
 }
 
-impl Display for Map {
+impl<const SIZE: usize> Display for Map<SIZE> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "#############")?;
         writeln!(f, "{}", self.hallway)?;
@@ -211,31 +211,31 @@ impl Display for Map {
     }
 }
 
-impl Debug for Map {
+impl<const SIZE: usize> Debug for Map<SIZE> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", *self)
     }
 }
 
-impl Map {
+impl<const SIZE: usize> Map<SIZE> {
     fn new() -> Self {
         Self {
             hallway: Hallway::default(),
             rooms: [
                 Room {
-                    slots: [Amphipod::Empty; 4],
+                    slots: [Amphipod::Empty; SIZE],
                     kind: Amphipod::Amber,
                 },
                 Room {
-                    slots: [Amphipod::Empty; 4],
+                    slots: [Amphipod::Empty; SIZE],
                     kind: Amphipod::Bronze,
                 },
                 Room {
-                    slots: [Amphipod::Empty; 4],
+                    slots: [Amphipod::Empty; SIZE],
                     kind: Amphipod::Copper,
                 },
                 Room {
-                    slots: [Amphipod::Empty; 4],
+                    slots: [Amphipod::Empty; SIZE],
                     kind: Amphipod::Desert,
                 },
             ],
@@ -246,7 +246,7 @@ impl Map {
         self.hallway.is_empty() && self.rooms.iter().all(|room| room.is_done())
     }
 
-    fn generate_move(&self) -> Vec<(Map, usize)> {
+    fn generate_move(&self) -> Vec<(Self, usize)> {
         let mut res = Vec::new();
 
         for (i, &kind) in [
@@ -278,12 +278,12 @@ impl Map {
     }
 }
 
-fn generate_ent(
-    map: Map,
+fn generate_ent<const SIZE: usize>(
+    map: Map<SIZE>,
     amphipod: Amphipod,
     room: Amphipod,
     steps: usize,
-) -> impl Iterator<Item = (Map, usize)> {
+) -> impl Iterator<Item = (Map<SIZE>, usize)> {
     let mut pos = 0;
     let (l, r) = Hallway::room_entrance(room);
 
@@ -307,13 +307,12 @@ fn generate_ent(
 }
 
 #[aoc_generator(day23, part1)]
-pub fn generator1(input: &str) -> Map {
+pub fn generator1(input: &str) -> Map<2> {
     let mut map = Map::new();
 
     for (i, c) in input
         .bytes()
         .filter(|&c| c.is_ascii_alphabetic())
-        .chain("ABCDABCD".bytes())
         .enumerate()
     {
         map.rooms[i % 4].slots[i / 4] = Amphipod::parse(c);
@@ -323,7 +322,7 @@ pub fn generator1(input: &str) -> Map {
 }
 
 #[aoc_generator(day23, part2)]
-pub fn generator2(input: &str) -> Map {
+pub fn generator2(input: &str) -> Map<4> {
     let mut map = Map::new();
 
     let input = input.bytes().filter(|&c| c.is_ascii_alphabetic());
@@ -341,13 +340,13 @@ pub fn generator2(input: &str) -> Map {
 }
 
 #[aoc(day23, part1)]
-pub fn part1(inputs: &Map) -> usize {
+pub fn part1(inputs: &Map<2>) -> usize {
     let a = dijkstra(inputs, |map| map.generate_move(), |map| map.is_done());
     a.unwrap().1
 }
 
 #[aoc(day23, part2)]
-pub fn part2(inputs: &Map) -> usize {
+pub fn part2(inputs: &Map<4>) -> usize {
     let a = dijkstra(inputs, |map| map.generate_move(), |map| map.is_done());
 
     // println!("{:?}", a);
