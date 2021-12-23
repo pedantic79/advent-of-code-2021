@@ -3,6 +3,8 @@ use std::{convert::Infallible, str::FromStr};
 use aoc_runner_derive::{aoc, aoc_generator};
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
+use crate::utils::parse_range;
+
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Cuboid {
     kind: bool,
@@ -15,28 +17,14 @@ impl FromStr for Cuboid {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // on x=-3..43,y=-28..22,z=-6..38
+        // 00 1 222222 3 4444444 5 666666
         let mut itr = s.split(&[' ', '=', ','][..]);
         let kind = itr.next().unwrap() == "on";
-        let x = itr
-            .nth(1)
-            .unwrap()
-            .split_once("..")
-            .map(|(x, y)| (x.parse().unwrap(), y.parse().unwrap()))
-            .unwrap();
 
-        let y = itr
-            .nth(1)
-            .unwrap()
-            .split_once("..")
-            .map(|(x, y)| (x.parse().unwrap(), y.parse().unwrap()))
-            .unwrap();
-
-        let z = itr
-            .nth(1)
-            .unwrap()
-            .split_once("..")
-            .map(|(x, y)| (x.parse().unwrap(), y.parse().unwrap()))
-            .unwrap();
+        let x = parse_range(itr.nth(1).unwrap());
+        let y = parse_range(itr.nth(1).unwrap());
+        let z = parse_range(itr.nth(1).unwrap());
 
         Ok(Self { kind, x, y, z })
     }
@@ -94,7 +82,7 @@ pub fn part1(inputs: &[Cuboid]) -> isize {
     inputs
         .par_iter()
         .enumerate()
-        .filter(|c| c.1.kind)
+        .filter(|(_, cuboid)| cuboid.kind)
         .filter_map(|(i, cuboid)| {
             if [cuboid.x, cuboid.y, cuboid.z]
                 .iter()
@@ -113,7 +101,7 @@ pub fn part2(inputs: &[Cuboid]) -> isize {
     inputs
         .par_iter()
         .enumerate()
-        .filter(|c| c.1.kind)
+        .filter(|(_, cuboid)| cuboid.kind)
         .map(|(i, cuboid)| cuboid.count(&inputs[i + 1..]))
         .sum()
 }
