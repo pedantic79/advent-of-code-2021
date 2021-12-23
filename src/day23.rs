@@ -77,10 +77,10 @@ impl Display for Hallway {
 
 impl Hallway {
     fn is_empty(&self) -> bool {
-        self.0.iter().all(|a| a == &Amphipod::Empty)
+        self.0.iter().all(|&amphipod| amphipod == Amphipod::Empty)
     }
 
-    fn is_clear(&self, pos: usize, l: usize, r: usize) -> bool {
+    fn is_slot_clear(&self, pos: usize, l: usize, r: usize) -> bool {
         if pos <= l {
             (pos..=l).all(|x| self.0[x] == Amphipod::Empty)
         } else {
@@ -89,8 +89,8 @@ impl Hallway {
     }
 
     // The distance from the enterance to Amphipod Room a to Slot pos
-    fn distance(pos: usize, a: Amphipod) -> usize {
-        match a {
+    fn distance(pos: usize, amphipod: Amphipod) -> usize {
+        match amphipod {
             Amphipod::Amber => [2, 1, 1, 3, 5, 7, 8][pos],
             Amphipod::Bronze => [4, 3, 1, 1, 3, 5, 6][pos],
             Amphipod::Copper => [6, 5, 3, 1, 1, 3, 4][pos],
@@ -99,8 +99,8 @@ impl Hallway {
         }
     }
 
-    const fn room_entrance(a: Amphipod) -> (usize, usize) {
-        match a {
+    const fn room_entrance(amphipod: Amphipod) -> (usize, usize) {
+        match amphipod {
             Amphipod::Amber => (1, 2),
             Amphipod::Bronze => (2, 3),
             Amphipod::Copper => (3, 4),
@@ -109,8 +109,8 @@ impl Hallway {
         }
     }
 
-    fn slot_paths(pos: usize, a: Amphipod) -> Option<(usize, usize)> {
-        let (left, right) = Self::room_entrance(a);
+    fn slot_paths(pos: usize, amphipod: Amphipod) -> Option<(usize, usize)> {
+        let (left, right) = Self::room_entrance(amphipod);
         if pos == left || pos == right {
             None
         } else if pos < left {
@@ -120,9 +120,9 @@ impl Hallway {
         }
     }
 
-    fn path_clear(&self, pos: usize, a: Amphipod) -> bool {
-        Self::slot_paths(pos, a).map_or(true, |(l, r)| {
-            self.0[l..=r].iter().all(|x| x == &Amphipod::Empty)
+    fn is_clear_path(&self, pos: usize, amphipod: Amphipod) -> bool {
+        Self::slot_paths(pos, amphipod).map_or(true, |(l, r)| {
+            self.0[l..=r].iter().all(|&x| x == Amphipod::Empty)
         })
     }
 }
@@ -139,8 +139,9 @@ impl Room {
         let mut state = Amphipod::Empty;
         let mut i = 0;
 
-        while let Some(&a) = self.slots.get(i) {
-            if a == state {
+        // State-machine to make sure the top is Empty then matches are particular kind
+        while let Some(&amphipod) = self.slots.get(i) {
+            if amphipod == state {
                 i += 1;
             } else if state == Amphipod::Empty {
                 state = self.kind;
@@ -153,15 +154,15 @@ impl Room {
     }
 
     fn is_done(&self) -> bool {
-        self.slots.iter().all(|a| a == &self.kind)
+        self.slots.iter().all(|&amphipod| amphipod == self.kind)
     }
 
     fn get_top(&self) -> Option<(Amphipod, Room, usize)> {
-        for (i, &a) in self.slots.iter().enumerate() {
-            if a != Amphipod::Empty {
+        for (i, &amphipod) in self.slots.iter().enumerate() {
+            if amphipod != Amphipod::Empty {
                 let mut new_room = *self;
                 new_room.slots[i] = Amphipod::Empty;
-                return Some((a, new_room, i + 1));
+                return Some((amphipod, new_room, i + 1));
             }
         }
 
@@ -169,10 +170,10 @@ impl Room {
     }
 
     // Add Amphipod a to room, returning number of steps
-    fn push(&mut self, a: Amphipod) -> usize {
-        for (i, p) in self.slots.iter_mut().enumerate().rev() {
-            if p == &Amphipod::Empty {
-                *p = a;
+    fn push(&mut self, amphipod: Amphipod) -> usize {
+        for (i, ptr) in self.slots.iter_mut().enumerate().rev() {
+            if ptr == &Amphipod::Empty {
+                *ptr = amphipod;
                 return i + 1;
             }
         }
@@ -242,7 +243,7 @@ impl Map {
     }
 
     fn is_done(&self) -> bool {
-        self.hallway.is_empty() && self.rooms.iter().all(|r| r.is_done())
+        self.hallway.is_empty() && self.rooms.iter().all(|room| room.is_done())
     }
 
     fn generate_move(&self) -> Vec<(Map, usize)> {
@@ -258,18 +259,18 @@ impl Map {
         .enumerate()
         {
             if self.rooms[i].is_ready() {
-                for (pos, amp) in self.hallway.0.iter().enumerate() {
-                    if amp == &kind && self.hallway.path_clear(pos, kind) {
-                        let mut copy = *self;
-                        copy.hallway.0[pos] = Amphipod::Empty;
-                        let cost = Hallway::distance(pos, kind) + copy.rooms[i].push(kind);
-                        res.push((copy, kind.cost_per() * cost));
+                for (pos, &amphipod) in self.hallway.0.iter().enumerate() {
+                    if amphipod == kind && self.hallway.is_clear_path(pos, kind) {
+                        let mut new_map = *self;
+                        new_map.hallway.0[pos] = Amphipod::Empty;
+                        let steps = Hallway::distance(pos, kind) + new_map.rooms[i].push(kind);
+                        res.push((new_map, kind.cost_per() * steps));
                     }
                 }
-            } else if let Some((a, room, cost)) = self.rooms[i].get_top() {
-                let mut copy = *self;
-                copy.rooms[i] = room;
-                res.extend(generate_ent(copy, a, kind, cost));
+            } else if let Some((amphipod, room, steps)) = self.rooms[i].get_top() {
+                let mut new_map = *self;
+                new_map.rooms[i] = room;
+                res.extend(generate_ent(new_map, amphipod, kind, steps));
             }
         }
 
@@ -279,9 +280,9 @@ impl Map {
 
 fn generate_ent(
     map: Map,
-    a: Amphipod,
+    amphipod: Amphipod,
     room: Amphipod,
-    cost: usize,
+    steps: usize,
 ) -> impl Iterator<Item = (Map, usize)> {
     let mut pos = 0;
     let (l, r) = Hallway::room_entrance(room);
@@ -289,12 +290,12 @@ fn generate_ent(
     from_fn(move || loop {
         if pos == 7 {
             break None;
-        } else if map.hallway.0[pos] == Amphipod::Empty && map.hallway.is_clear(pos, l, r) {
+        } else if map.hallway.0[pos] == Amphipod::Empty && map.hallway.is_slot_clear(pos, l, r) {
             let mut new_map = map;
-            new_map.hallway.0[pos] = a;
+            new_map.hallway.0[pos] = amphipod;
             let ret = Some((
                 new_map,
-                a.cost_per() * (cost + Hallway::distance(pos, room)),
+                amphipod.cost_per() * (steps + Hallway::distance(pos, room)),
             ));
             pos += 1;
 
@@ -312,13 +313,10 @@ pub fn generator1(input: &str) -> Map {
     for (i, c) in input
         .bytes()
         .filter(|&c| c.is_ascii_alphabetic())
+        .chain("ABCDABCD".bytes())
         .enumerate()
     {
         map.rooms[i % 4].slots[i / 4] = Amphipod::parse(c);
-    }
-
-    for i in 8..16 {
-        map.rooms[i % 4].slots[i / 4] = Amphipod::parse(b'A' + (i % 4) as u8);
     }
 
     map
@@ -328,12 +326,12 @@ pub fn generator1(input: &str) -> Map {
 pub fn generator2(input: &str) -> Map {
     let mut map = Map::new();
 
+    let input = input.bytes().filter(|&c| c.is_ascii_alphabetic());
     for (i, c) in input
-        .bytes()
-        .filter(|&c| c.is_ascii_alphabetic())
+        .clone()
         .take(4)
         .chain("DCBADBAC".bytes())
-        .chain(input.bytes().filter(|&c| c.is_ascii_alphabetic()).skip(4))
+        .chain(input.skip(4))
         .enumerate()
     {
         map.rooms[i % 4].slots[i / 4] = Amphipod::parse(c);
