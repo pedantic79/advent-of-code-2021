@@ -51,6 +51,16 @@ impl Amphipod {
             Amphipod::Empty => todo!(),
         }
     }
+
+    fn parse(c: u8) -> Self {
+        match c {
+            b'A' => Amphipod::A,
+            b'B' => Amphipod::B,
+            b'C' => Amphipod::C,
+            b'D' => Amphipod::D,
+            _ => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default, Hash)]
@@ -204,6 +214,18 @@ impl Debug for Map {
 }
 
 impl Map {
+    fn new() -> Self {
+        Self {
+            slots: Slots::default(),
+            rooms: [
+                Room([Amphipod::Empty; 4], Amphipod::A),
+                Room([Amphipod::Empty; 4], Amphipod::B),
+                Room([Amphipod::Empty; 4], Amphipod::C),
+                Room([Amphipod::Empty; 4], Amphipod::D),
+            ],
+        }
+    }
+
     fn is_done(&self) -> bool {
         self.slots.is_empty() && self.rooms.iter().all(|r| r.is_done())
     }
@@ -219,8 +241,8 @@ impl Map {
                 for (pos, amp) in self.slots.0.iter().enumerate() {
                     if amp == &kind && self.slots.path_clear(pos, kind) {
                         let mut copy = *self;
-                        let cost = Slots::distance(pos, kind) + copy.rooms[i].push(kind);
                         copy.slots.0[pos] = Amphipod::Empty;
+                        let cost = Slots::distance(pos, kind) + copy.rooms[i].push(kind);
                         res.push((copy, kind.cost_per() * cost));
                     }
                 }
@@ -261,53 +283,40 @@ fn generate_ent(
 }
 
 #[aoc_generator(day23, part1)]
-pub fn generator1(_input: &str) -> Map {
-    Map {
-        slots: Slots::default(),
-        rooms: [
-            Room(
-                [Amphipod::D, Amphipod::C, Amphipod::A, Amphipod::A],
-                Amphipod::A,
-            ),
-            Room(
-                [Amphipod::A, Amphipod::A, Amphipod::B, Amphipod::B],
-                Amphipod::B,
-            ),
-            Room(
-                [Amphipod::C, Amphipod::B, Amphipod::C, Amphipod::C],
-                Amphipod::C,
-            ),
-            Room(
-                [Amphipod::D, Amphipod::B, Amphipod::D, Amphipod::D],
-                Amphipod::D,
-            ),
-        ],
+pub fn generator1(input: &str) -> Map {
+    let mut map = Map::new();
+
+    for (i, c) in input
+        .bytes()
+        .filter(|&c| c.is_ascii_alphabetic())
+        .enumerate()
+    {
+        map.rooms[i % 4].0[i / 4] = Amphipod::parse(c);
     }
+
+    for i in 8..16 {
+        map.rooms[i % 4].0[i / 4] = Amphipod::parse(b'A' + (i % 4) as u8);
+    }
+
+    map
 }
 
 #[aoc_generator(day23, part2)]
-pub fn generator2(_input: &str) -> Map {
-    Map {
-        slots: Slots::default(),
-        rooms: [
-            Room(
-                [Amphipod::D, Amphipod::D, Amphipod::D, Amphipod::C],
-                Amphipod::A,
-            ),
-            Room(
-                [Amphipod::A, Amphipod::C, Amphipod::B, Amphipod::A],
-                Amphipod::B,
-            ),
-            Room(
-                [Amphipod::C, Amphipod::B, Amphipod::A, Amphipod::B],
-                Amphipod::C,
-            ),
-            Room(
-                [Amphipod::D, Amphipod::A, Amphipod::C, Amphipod::B],
-                Amphipod::D,
-            ),
-        ],
+pub fn generator2(input: &str) -> Map {
+    let mut map = Map::new();
+
+    for (i, c) in input
+        .bytes()
+        .filter(|&c| c.is_ascii_alphabetic())
+        .take(4)
+        .chain("DCBADBAC".bytes())
+        .chain(input.bytes().filter(|&c| c.is_ascii_alphabetic()).skip(4))
+        .enumerate()
+    {
+        map.rooms[i % 4].0[i / 4] = Amphipod::parse(c);
     }
+
+    map
 }
 
 #[aoc(day23, part1)]
@@ -343,12 +352,12 @@ mod tests {
 
     #[test]
     pub fn test1() {
-        // assert_eq!(part1(&generator(SAMPLE)), 7);
+        assert_eq!(part1(&generator1(SAMPLE)), 12521);
     }
 
     #[test]
     pub fn test2() {
-        // assert_eq!(part2(&generator(SAMPLE)), 336);
+        assert_eq!(part2(&generator2(SAMPLE)), 44169);
     }
 
     mod regression {
