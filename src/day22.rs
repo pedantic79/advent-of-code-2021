@@ -84,6 +84,7 @@ pub fn part1(inputs: &[Cuboid]) -> isize {
         .enumerate()
         .filter(|(_, cuboid)| cuboid.kind)
         .filter_map(|(i, cuboid)| {
+            // BUG: This isn't the right way to make sure the cubes fit inside -50..50
             if [cuboid.x, cuboid.y, cuboid.z]
                 .iter()
                 .all(|r| range_overlap(*r, (-50, 50)).is_some())
