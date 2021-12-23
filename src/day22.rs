@@ -1,6 +1,7 @@
 use std::{convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Cuboid {
@@ -91,7 +92,7 @@ pub fn generator(input: &str) -> Vec<Cuboid> {
 #[aoc(day22, part1)]
 pub fn part1(inputs: &[Cuboid]) -> isize {
     inputs
-        .iter()
+        .par_iter()
         .enumerate()
         .filter(|c| c.1.kind)
         .filter_map(|(i, cuboid)| {
@@ -110,7 +111,7 @@ pub fn part1(inputs: &[Cuboid]) -> isize {
 #[aoc(day22, part2)]
 pub fn part2(inputs: &[Cuboid]) -> isize {
     inputs
-        .iter()
+        .par_iter()
         .enumerate()
         .filter(|c| c.1.kind)
         .map(|(i, cuboid)| cuboid.count(&inputs[i + 1..]))
