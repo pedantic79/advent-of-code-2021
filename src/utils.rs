@@ -1,4 +1,4 @@
-use std::ops::Mul;
+use std::{fmt::Debug, ops::Mul, str::FromStr};
 
 trait MinMaxIterator: Iterator {
     fn min_max<'a, T>(mut self) -> Option<(&'a T, &'a T)>
@@ -159,6 +159,16 @@ where
     }
 
     res
+}
+
+pub fn parse_range<T>(s: &str) -> (T, T)
+where
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
+    s.split_once("..")
+        .map(|(x, y)| (T::from_str(x).unwrap(), T::from_str(y).unwrap()))
+        .unwrap()
 }
 
 pub fn neighbors(
