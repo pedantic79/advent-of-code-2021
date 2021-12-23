@@ -78,105 +78,42 @@ impl Slots {
         }
     }
 
+    // The distance from the enterance to Amphipod Room a to Slot pos
     fn distance(pos: usize, a: Amphipod) -> usize {
         match a {
-            Amphipod::A => match pos {
-                0 => 2,
-                1 => 1,
-                2 => 1,
-                3 => 3,
-                4 => 5,
-                5 => 7,
-                6 => 8,
-                _ => unreachable!(),
-            },
-            Amphipod::B => match pos {
-                0 => 4,
-                1 => 3,
-                2 => 1,
-                3 => 1,
-                4 => 3,
-                5 => 5,
-                6 => 6,
-                _ => unreachable!(),
-            },
-            Amphipod::C => match pos {
-                0 => 6,
-                1 => 5,
-                2 => 3,
-                3 => 1,
-                4 => 1,
-                5 => 3,
-                6 => 4,
-                _ => unreachable!(),
-            },
-            Amphipod::D => match pos {
-                0 => 8,
-                1 => 7,
-                2 => 5,
-                3 => 3,
-                4 => 1,
-                5 => 1,
-                6 => 2,
-                _ => unreachable!(),
-            },
+            Amphipod::A => [2, 1, 1, 3, 5, 7, 8][pos],
+            Amphipod::B => [4, 3, 1, 1, 3, 5, 6][pos],
+            Amphipod::C => [6, 5, 3, 1, 1, 3, 4][pos],
+            Amphipod::D => [8, 7, 5, 3, 1, 1, 2][pos],
             Amphipod::Empty => unreachable!(),
         }
     }
 
-    fn path_clear(&self, pos: usize, a: Amphipod) -> bool {
-        match pos {
-            0 => match a {
-                Amphipod::A => self.0[1] == Amphipod::Empty,
-                Amphipod::B => self.0[1..=2].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::C => self.0[1..=3].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::D => self.0[1..=4].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::Empty => unreachable!(),
-            },
-            1 => match a {
-                Amphipod::A => true,
-                Amphipod::B => self.0[2] == Amphipod::Empty,
-                Amphipod::C => self.0[2..=3].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::D => self.0[2..=4].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::Empty => unreachable!(),
-            },
-            2 => match a {
-                Amphipod::A => true,
-                Amphipod::B => true,
-                Amphipod::C => self.0[3] == Amphipod::Empty,
-                Amphipod::D => self.0[3..=4].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::Empty => unreachable!(),
-            },
-            3 => match a {
-                Amphipod::A => self.0[2] == Amphipod::Empty,
-                Amphipod::B => true,
-                Amphipod::C => true,
-                Amphipod::D => self.0[4] == Amphipod::Empty,
-                Amphipod::Empty => unreachable!(),
-            },
-            4 => match a {
-                Amphipod::A => self.0[2..=3].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::B => self.0[3] == Amphipod::Empty,
-                Amphipod::C => true,
-                Amphipod::D => true,
-                Amphipod::Empty => unreachable!(),
-            },
-            5 => match a {
-                Amphipod::A => self.0[2..=4].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::B => self.0[3..=4].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::C => self.0[4] == Amphipod::Empty,
-                Amphipod::D => true,
-                Amphipod::Empty => unreachable!(),
-            },
-            6 => match a {
-                Amphipod::A => self.0[2..=5].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::B => self.0[3..=5].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::C => self.0[4..=5].iter().all(|x| x == &Amphipod::Empty),
-                Amphipod::D => self.0[5] == Amphipod::Empty,
-                Amphipod::Empty => unreachable!(),
-            },
-            _ => unreachable!(),
+    const fn room_entrance(a: Amphipod) -> (usize, usize) {
+        match a {
+            Amphipod::A => (1, 2),
+            Amphipod::B => (2, 3),
+            Amphipod::C => (3, 4),
+            Amphipod::D => (4, 5),
+            Amphipod::Empty => unreachable!(),
         }
+    }
+
+    fn slot_paths(pos: usize, a: Amphipod) -> Option<(usize, usize)> {
+        let (left, right) = Self::room_entrance(a);
+        if pos == left || pos == right {
+            None
+        } else if pos < left {
+            Some((pos + 1, left))
+        } else {
+            Some((right, pos - 1))
+        }
+    }
+
+    fn path_clear(&self, pos: usize, a: Amphipod) -> bool {
+        Self::slot_paths(pos, a).map_or(true, |(l, r)| {
+            self.0[l..=r].iter().all(|x| x == &Amphipod::Empty)
+        })
     }
 }
 
