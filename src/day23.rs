@@ -16,10 +16,10 @@ use pathfinding::prelude::dijkstra;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Amphipod {
-    A,
-    B,
-    C,
-    D,
+    Amber,
+    Bronze,
+    Copper,
+    Desert,
     Empty,
 }
 
@@ -32,10 +32,10 @@ impl Default for Amphipod {
 impl Display for Amphipod {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Amphipod::A => write!(f, "A"),
-            Amphipod::B => write!(f, "B"),
-            Amphipod::C => write!(f, "C"),
-            Amphipod::D => write!(f, "D"),
+            Amphipod::Amber => write!(f, "A"),
+            Amphipod::Bronze => write!(f, "B"),
+            Amphipod::Copper => write!(f, "C"),
+            Amphipod::Desert => write!(f, "D"),
             Amphipod::Empty => write!(f, "."),
         }
     }
@@ -44,28 +44,28 @@ impl Display for Amphipod {
 impl Amphipod {
     fn cost_per(&self) -> usize {
         match *self {
-            Amphipod::A => 1,
-            Amphipod::B => 10,
-            Amphipod::C => 100,
-            Amphipod::D => 1000,
+            Amphipod::Amber => 1,
+            Amphipod::Bronze => 10,
+            Amphipod::Copper => 100,
+            Amphipod::Desert => 1000,
             Amphipod::Empty => todo!(),
         }
     }
 
     fn parse(c: u8) -> Self {
         match c {
-            b'A' => Amphipod::A,
-            b'B' => Amphipod::B,
-            b'C' => Amphipod::C,
-            b'D' => Amphipod::D,
+            b'A' => Amphipod::Amber,
+            b'B' => Amphipod::Bronze,
+            b'C' => Amphipod::Copper,
+            b'D' => Amphipod::Desert,
             _ => unreachable!(),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default, Hash)]
-pub struct Slots([Amphipod; 7]);
-impl Display for Slots {
+pub struct Hallway([Amphipod; 7]);
+impl Display for Hallway {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -75,7 +75,7 @@ impl Display for Slots {
     }
 }
 
-impl Slots {
+impl Hallway {
     fn is_empty(&self) -> bool {
         self.0.iter().all(|a| a == &Amphipod::Empty)
     }
@@ -91,20 +91,20 @@ impl Slots {
     // The distance from the enterance to Amphipod Room a to Slot pos
     fn distance(pos: usize, a: Amphipod) -> usize {
         match a {
-            Amphipod::A => [2, 1, 1, 3, 5, 7, 8][pos],
-            Amphipod::B => [4, 3, 1, 1, 3, 5, 6][pos],
-            Amphipod::C => [6, 5, 3, 1, 1, 3, 4][pos],
-            Amphipod::D => [8, 7, 5, 3, 1, 1, 2][pos],
+            Amphipod::Amber => [2, 1, 1, 3, 5, 7, 8][pos],
+            Amphipod::Bronze => [4, 3, 1, 1, 3, 5, 6][pos],
+            Amphipod::Copper => [6, 5, 3, 1, 1, 3, 4][pos],
+            Amphipod::Desert => [8, 7, 5, 3, 1, 1, 2][pos],
             Amphipod::Empty => unreachable!(),
         }
     }
 
     const fn room_entrance(a: Amphipod) -> (usize, usize) {
         match a {
-            Amphipod::A => (1, 2),
-            Amphipod::B => (2, 3),
-            Amphipod::C => (3, 4),
-            Amphipod::D => (4, 5),
+            Amphipod::Amber => (1, 2),
+            Amphipod::Bronze => (2, 3),
+            Amphipod::Copper => (3, 4),
+            Amphipod::Desert => (4, 5),
             Amphipod::Empty => unreachable!(),
         }
     }
@@ -128,7 +128,10 @@ impl Slots {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
-pub struct Room([Amphipod; 4], Amphipod);
+pub struct Room {
+    slots: [Amphipod; 4],
+    kind: Amphipod,
+}
 
 impl Room {
     // Checks to see if Room is ready to accept an Amphipod
@@ -136,11 +139,11 @@ impl Room {
         let mut state = Amphipod::Empty;
         let mut i = 0;
 
-        while let Some(&a) = self.0.get(i) {
+        while let Some(&a) = self.slots.get(i) {
             if a == state {
                 i += 1;
             } else if state == Amphipod::Empty {
-                state = self.1;
+                state = self.kind;
             } else {
                 return false;
             }
@@ -150,14 +153,14 @@ impl Room {
     }
 
     fn is_done(&self) -> bool {
-        self.0.iter().all(|a| a == &self.1)
+        self.slots.iter().all(|a| a == &self.kind)
     }
 
     fn get_top(&self) -> Option<(Amphipod, Room, usize)> {
-        for (i, &a) in self.0.iter().enumerate() {
+        for (i, &a) in self.slots.iter().enumerate() {
             if a != Amphipod::Empty {
                 let mut new_room = *self;
-                new_room.0[i] = Amphipod::Empty;
+                new_room.slots[i] = Amphipod::Empty;
                 return Some((a, new_room, i + 1));
             }
         }
@@ -167,7 +170,7 @@ impl Room {
 
     // Add Amphipod a to room, returning number of steps
     fn push(&mut self, a: Amphipod) -> usize {
-        for (i, p) in self.0.iter_mut().enumerate().rev() {
+        for (i, p) in self.slots.iter_mut().enumerate().rev() {
             if p == &Amphipod::Empty {
                 *p = a;
                 return i + 1;
@@ -180,23 +183,23 @@ impl Room {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Map {
-    slots: Slots,
+    hallway: Hallway,
     rooms: [Room; 4],
 }
 
 impl Display for Map {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "#############")?;
-        writeln!(f, "{}", self.slots)?;
-        for i in 0..self.rooms[0].0.len() {
+        writeln!(f, "{}", self.hallway)?;
+        for i in 0..self.rooms[0].slots.len() {
             writeln!(
                 f,
                 "{}#{}#{}#{}#{}#{}",
                 if i == 0 { "##" } else { "  " },
-                self.rooms[0].0[i],
-                self.rooms[1].0[i],
-                self.rooms[2].0[i],
-                self.rooms[3].0[i],
+                self.rooms[0].slots[i],
+                self.rooms[1].slots[i],
+                self.rooms[2].slots[i],
+                self.rooms[3].slots[i],
                 if i == 0 { "##" } else { "  " },
             )?;
         }
@@ -216,33 +219,50 @@ impl Debug for Map {
 impl Map {
     fn new() -> Self {
         Self {
-            slots: Slots::default(),
+            hallway: Hallway::default(),
             rooms: [
-                Room([Amphipod::Empty; 4], Amphipod::A),
-                Room([Amphipod::Empty; 4], Amphipod::B),
-                Room([Amphipod::Empty; 4], Amphipod::C),
-                Room([Amphipod::Empty; 4], Amphipod::D),
+                Room {
+                    slots: [Amphipod::Empty; 4],
+                    kind: Amphipod::Amber,
+                },
+                Room {
+                    slots: [Amphipod::Empty; 4],
+                    kind: Amphipod::Bronze,
+                },
+                Room {
+                    slots: [Amphipod::Empty; 4],
+                    kind: Amphipod::Copper,
+                },
+                Room {
+                    slots: [Amphipod::Empty; 4],
+                    kind: Amphipod::Desert,
+                },
             ],
         }
     }
 
     fn is_done(&self) -> bool {
-        self.slots.is_empty() && self.rooms.iter().all(|r| r.is_done())
+        self.hallway.is_empty() && self.rooms.iter().all(|r| r.is_done())
     }
 
     fn generate_move(&self) -> Vec<(Map, usize)> {
         let mut res = Vec::new();
 
-        for (i, &kind) in [Amphipod::A, Amphipod::B, Amphipod::C, Amphipod::D]
-            .iter()
-            .enumerate()
+        for (i, &kind) in [
+            Amphipod::Amber,
+            Amphipod::Bronze,
+            Amphipod::Copper,
+            Amphipod::Desert,
+        ]
+        .iter()
+        .enumerate()
         {
             if self.rooms[i].is_ready() {
-                for (pos, amp) in self.slots.0.iter().enumerate() {
-                    if amp == &kind && self.slots.path_clear(pos, kind) {
+                for (pos, amp) in self.hallway.0.iter().enumerate() {
+                    if amp == &kind && self.hallway.path_clear(pos, kind) {
                         let mut copy = *self;
-                        copy.slots.0[pos] = Amphipod::Empty;
-                        let cost = Slots::distance(pos, kind) + copy.rooms[i].push(kind);
+                        copy.hallway.0[pos] = Amphipod::Empty;
+                        let cost = Hallway::distance(pos, kind) + copy.rooms[i].push(kind);
                         res.push((copy, kind.cost_per() * cost));
                     }
                 }
@@ -264,15 +284,18 @@ fn generate_ent(
     cost: usize,
 ) -> impl Iterator<Item = (Map, usize)> {
     let mut pos = 0;
-    let (l, r) = Slots::room_entrance(room);
+    let (l, r) = Hallway::room_entrance(room);
 
     from_fn(move || loop {
         if pos == 7 {
             break None;
-        } else if map.slots.0[pos] == Amphipod::Empty && map.slots.is_clear(pos, l, r) {
+        } else if map.hallway.0[pos] == Amphipod::Empty && map.hallway.is_clear(pos, l, r) {
             let mut new_map = map;
-            new_map.slots.0[pos] = a;
-            let ret = Some((new_map, a.cost_per() * (cost + Slots::distance(pos, room))));
+            new_map.hallway.0[pos] = a;
+            let ret = Some((
+                new_map,
+                a.cost_per() * (cost + Hallway::distance(pos, room)),
+            ));
             pos += 1;
 
             break ret;
@@ -291,11 +314,11 @@ pub fn generator1(input: &str) -> Map {
         .filter(|&c| c.is_ascii_alphabetic())
         .enumerate()
     {
-        map.rooms[i % 4].0[i / 4] = Amphipod::parse(c);
+        map.rooms[i % 4].slots[i / 4] = Amphipod::parse(c);
     }
 
     for i in 8..16 {
-        map.rooms[i % 4].0[i / 4] = Amphipod::parse(b'A' + (i % 4) as u8);
+        map.rooms[i % 4].slots[i / 4] = Amphipod::parse(b'A' + (i % 4) as u8);
     }
 
     map
@@ -313,7 +336,7 @@ pub fn generator2(input: &str) -> Map {
         .chain(input.bytes().filter(|&c| c.is_ascii_alphabetic()).skip(4))
         .enumerate()
     {
-        map.rooms[i % 4].0[i / 4] = Amphipod::parse(c);
+        map.rooms[i % 4].slots[i / 4] = Amphipod::parse(c);
     }
 
     map
