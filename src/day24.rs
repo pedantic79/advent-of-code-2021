@@ -142,7 +142,7 @@ fn solve(
     program: &[Instruction],
     pc: usize,
     alu: Alu,
-    digits: [usize; 9],
+    digits: &[usize],
     seen: &mut FxHashMap<(Alu, usize), Option<usize>>,
     acc: usize,
 ) -> Option<usize> {
@@ -150,7 +150,7 @@ fn solve(
         return *ans;
     }
 
-    'inputs: for input in digits {
+    'inputs: for &input in digits {
         let mut alu = alu;
         let mut pc = pc;
         alu.process_ins(&program[pc], input);
@@ -187,7 +187,7 @@ pub fn part1(instructions: &Day24) -> usize {
         &instructions.ins,
         0,
         Alu::default(),
-        [9, 8, 7, 6, 5, 4, 3, 2, 1],
+        &[9, 8, 7, 6, 5, 3, 1],
         &mut FxHashMap::default(),
         0,
     )
@@ -200,7 +200,7 @@ pub fn part2(instructions: &Day24) -> usize {
         &instructions.ins,
         0,
         Alu::default(),
-        [1, 2, 7, 3, 4, 9, 9, 9, 9],
+        &[1, 2, 7, 3, 4, 9],
         &mut FxHashMap::default(),
         0,
     )
