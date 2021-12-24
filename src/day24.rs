@@ -143,10 +143,10 @@ fn solve(
     pc: usize,
     alu: Alu,
     digits: [usize; 9],
-    seen: &mut FxHashMap<(Alu, usize), Option<usize>>,
+    seen: &mut FxHashMap<(isize, usize), Option<usize>>,
     acc: usize,
 ) -> Option<usize> {
-    if let Some(ans) = seen.get(&(alu, pc)) {
+    if let Some(ans) = seen.get(&(alu.z, pc)) {
         return *ans;
     }
 
@@ -159,7 +159,7 @@ fn solve(
         while let Some(inst) = program.get(pc) {
             if let Instruction::Inp(_) = inst {
                 if let Some(ans) = solve(program, pc, alu, digits, seen, acc * 10 + input) {
-                    seen.insert((alu, pc), Some(ans));
+                    seen.insert((alu.z, pc), Some(ans));
                     return Some(ans);
                 } else {
                     continue 'inputs;
@@ -172,12 +172,12 @@ fn solve(
 
         if alu.is_valid() {
             let total = Some(acc * 10 + input);
-            seen.insert((alu, pc), total);
+            seen.insert((alu.z, pc), total);
             return total;
         }
     }
 
-    seen.insert((alu, pc), None);
+    seen.insert((alu.z, pc), None);
     None
 }
 
