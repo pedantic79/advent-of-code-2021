@@ -80,7 +80,7 @@ impl Hallway {
         self.0.iter().all(|&amphipod| amphipod == Amphipod::Empty)
     }
 
-    fn is_slot_clear(&self, pos: usize, l: usize, r: usize) -> bool {
+    fn is_clear_path_to_slot(&self, pos: usize, l: usize, r: usize) -> bool {
         if pos <= l {
             (pos..=l).all(|x| self.0[x] == Amphipod::Empty)
         } else {
@@ -88,9 +88,9 @@ impl Hallway {
         }
     }
 
-    // The distance from the enterance to Amphipod Room a to Slot pos
-    fn distance(pos: usize, amphipod: Amphipod) -> usize {
-        match amphipod {
+    // The distance from the entrance to Amphipod room to Slot position
+    fn distance(pos: usize, room_name: Amphipod) -> usize {
+        match room_name {
             Amphipod::Amber => [2, 1, 1, 3, 5, 7, 8][pos],
             Amphipod::Bronze => [4, 3, 1, 1, 3, 5, 6][pos],
             Amphipod::Copper => [6, 5, 3, 1, 1, 3, 4][pos],
@@ -99,8 +99,9 @@ impl Hallway {
         }
     }
 
-    const fn room_entrance(amphipod: Amphipod) -> (usize, usize) {
-        match amphipod {
+    // Gets the slot positions left and right of the Amphipod room
+    fn room_entrance(room_name: Amphipod) -> (usize, usize) {
+        match room_name {
             Amphipod::Amber => (1, 2),
             Amphipod::Bronze => (2, 3),
             Amphipod::Copper => (3, 4),
@@ -109,8 +110,9 @@ impl Hallway {
         }
     }
 
-    fn slot_paths(pos: usize, amphipod: Amphipod) -> Option<(usize, usize)> {
-        let (left, right) = Self::room_entrance(amphipod);
+    // Gets the range to check between the Amphipod room and the position
+    fn slot_paths(pos: usize, room_name: Amphipod) -> Option<(usize, usize)> {
+        let (left, right) = Self::room_entrance(room_name);
         if pos == left || pos == right {
             None
         } else if pos < left {
@@ -120,8 +122,8 @@ impl Hallway {
         }
     }
 
-    fn is_clear_path(&self, pos: usize, amphipod: Amphipod) -> bool {
-        Self::slot_paths(pos, amphipod).map_or(true, |(l, r)| {
+    fn is_clear_path_to_room(&self, pos: usize, room_name: Amphipod) -> bool {
+        Self::slot_paths(pos, room_name).map_or(true, |(l, r)| {
             self.0[l..=r].iter().all(|&x| x == Amphipod::Empty)
         })
     }
@@ -157,6 +159,7 @@ impl<const SIZE: usize> Room<SIZE> {
         self.slots.iter().all(|&amphipod| amphipod == self.kind)
     }
 
+    // Get the top element from the Room, and return new Room, and number of steps
     fn get_top(&self) -> Option<(Amphipod, Self, usize)> {
         for (i, &amphipod) in self.slots.iter().enumerate() {
             if amphipod != Amphipod::Empty {
@@ -169,7 +172,7 @@ impl<const SIZE: usize> Room<SIZE> {
         None
     }
 
-    // Add Amphipod a to room, returning number of steps
+    // Add Amphipod a to Room, returning number of steps
     fn push(&mut self, amphipod: Amphipod) -> usize {
         for (i, ptr) in self.slots.iter_mut().enumerate().rev() {
             if ptr == &Amphipod::Empty {
@@ -246,6 +249,7 @@ impl<const SIZE: usize> Map<SIZE> {
         self.hallway.is_empty() && self.rooms.iter().all(|room| room.is_done())
     }
 
+    // Generates a list of all moves and their cost
     fn generate_move(&self) -> Vec<(Self, usize)> {
         let mut res = Vec::new();
 
@@ -259,8 +263,9 @@ impl<const SIZE: usize> Map<SIZE> {
         .enumerate()
         {
             if self.rooms[i].is_ready() {
+                // Generates moves from slot to room
                 for (pos, &amphipod) in self.hallway.0.iter().enumerate() {
-                    if amphipod == kind && self.hallway.is_clear_path(pos, kind) {
+                    if amphipod == kind && self.hallway.is_clear_path_to_room(pos, kind) {
                         let mut new_map = *self;
                         new_map.hallway.0[pos] = Amphipod::Empty;
                         let steps = Hallway::distance(pos, kind) + new_map.rooms[i].push(kind);
@@ -268,9 +273,10 @@ impl<const SIZE: usize> Map<SIZE> {
                     }
                 }
             } else if let Some((amphipod, room, steps)) = self.rooms[i].get_top() {
+                // Generates moves from room to slot
                 let mut new_map = *self;
                 new_map.rooms[i] = room;
-                res.extend(generate_ent(new_map, amphipod, kind, steps));
+                res.extend(generate_room_to_slot(new_map, amphipod, kind, steps));
             }
         }
 
@@ -278,24 +284,27 @@ impl<const SIZE: usize> Map<SIZE> {
     }
 }
 
-fn generate_ent<const SIZE: usize>(
+fn generate_room_to_slot<const SIZE: usize>(
     map: Map<SIZE>,
     amphipod: Amphipod,
-    room: Amphipod,
+    room_name: Amphipod,
     steps: usize,
 ) -> impl Iterator<Item = (Map<SIZE>, usize)> {
     let mut pos = 0;
-    let (l, r) = Hallway::room_entrance(room);
+    let (l, r) = Hallway::room_entrance(room_name);
 
+    // Loop over from pos in 0..7, producing the new state and cost
     from_fn(move || loop {
         if pos == 7 {
             break None;
-        } else if map.hallway.0[pos] == Amphipod::Empty && map.hallway.is_slot_clear(pos, l, r) {
+        } else if map.hallway.0[pos] == Amphipod::Empty
+            && map.hallway.is_clear_path_to_slot(pos, l, r)
+        {
             let mut new_map = map;
             new_map.hallway.0[pos] = amphipod;
             let ret = Some((
                 new_map,
-                amphipod.cost_per() * (steps + Hallway::distance(pos, room)),
+                amphipod.cost_per() * (steps + Hallway::distance(pos, room_name)),
             ));
             pos += 1;
 
