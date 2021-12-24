@@ -1,17 +1,14 @@
+use std::cmp::{max, min};
+
 use aoc_runner_derive::{aoc, aoc_generator};
 
 fn parse_instruction(s: &str) -> isize {
     s.rsplit_once(' ').unwrap().1.parse().unwrap()
 }
 
-#[derive(Debug, PartialEq)]
-pub struct Day24 {
-    instructions: Vec<[isize; 3]>,
-}
-
 #[aoc_generator(day24)]
-pub fn generator(input: &str) -> Day24 {
-    let ins = input
+pub fn generator(input: &str) -> Vec<[isize; 3]> {
+    input
         .split("\ninp")
         .map(|chunk| {
             let mut itr = chunk.lines();
@@ -23,15 +20,15 @@ pub fn generator(input: &str) -> Day24 {
                 parse_instruction(itr.nth(9).unwrap()),
             ]
         })
-        .collect();
-
-    Day24 { instructions: ins }
+        .collect()
 }
 
-fn solve(instructions: &[[isize; 3]]) -> (usize, usize) {
+fn solve<F, const N: isize>(instructions: &[[isize; 3]], pick: F) -> usize
+where
+    F: Fn(isize, isize) -> isize,
+{
     let mut stack = Vec::new();
-    let mut max = [0; 14];
-    let mut min = [0; 14];
+    let mut num = [0; 14];
 
     for (i, &[div_x, add_x, add_y]) in instructions.iter().enumerate() {
         if div_x == 1 {
@@ -39,27 +36,22 @@ fn solve(instructions: &[[isize; 3]]) -> (usize, usize) {
         } else if let Some((j, ins_y)) = stack.pop() {
             let delta = ins_y + add_x;
 
-            max[i] = 9.min(9 + delta);
-            max[j] = 9.min(9 - delta);
-            min[i] = 1.max(1 + delta);
-            min[j] = 1.max(1 - delta);
+            num[i] = pick(N, N + delta);
+            num[j] = pick(N, N - delta);
         }
     }
 
-    (
-        min.iter().fold(0, |acc, &d| acc * 10 + d as usize),
-        max.iter().fold(0, |acc, &d| acc * 10 + d as usize),
-    )
+    num.iter().fold(0, |acc, &d| acc * 10 + d as usize)
 }
 
 #[aoc(day24, part1)]
-pub fn part1(instructions: &Day24) -> usize {
-    solve(&instructions.instructions).1
+pub fn part1(instructions: &[[isize; 3]]) -> usize {
+    solve::<_, 9>(instructions, min)
 }
 
 #[aoc(day24, part2)]
-pub fn part2(instructions: &Day24) -> usize {
-    solve(&instructions.instructions).0
+pub fn part2(instructions: &[[isize; 3]]) -> usize {
+    solve::<_, 1>(instructions, max)
 }
 
 #[cfg(test)]
