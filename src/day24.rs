@@ -92,10 +92,10 @@ impl Alu {
         self.z == 0
     }
 
-    fn process_ins(&mut self, ins: &Instruction, input: isize) {
+    fn process_ins(&mut self, ins: &Instruction, input: usize) {
         match ins {
             Instruction::Inp(v) => {
-                self.set_variable(*v, input);
+                self.set_variable(*v, input as isize);
             }
             Instruction::Add(a, b) => {
                 let x = self.get_variable(*a);
@@ -142,9 +142,10 @@ fn solve(
     program: &[Instruction],
     pc: usize,
     alu: Alu,
-    digits: [isize; 9],
-    seen: &mut FxHashMap<(Alu, usize), Option<isize>>,
-) -> Option<isize> {
+    digits: [usize; 9],
+    seen: &mut FxHashMap<(Alu, usize), Option<usize>>,
+    acc: usize,
+) -> Option<usize> {
     if let Some(ans) = seen.get(&(alu, pc)) {
         return *ans;
     }
@@ -157,11 +158,9 @@ fn solve(
 
         while let Some(inst) = program.get(pc) {
             if let Instruction::Inp(_) = inst {
-                if let Some(n) = solve(program, pc, alu, digits, seen) {
-                    // builds the number in reverse if we find a match
-                    let reversed = Some(n * 10 + input);
-                    seen.insert((alu, pc), reversed);
-                    return reversed;
+                if let Some(ans) = solve(program, pc, alu, digits, seen, acc * 10 + input) {
+                    seen.insert((alu, pc), Some(ans));
+                    return Some(ans);
                 } else {
                     continue 'inputs;
                 }
@@ -172,8 +171,9 @@ fn solve(
         }
 
         if alu.is_valid() {
-            seen.insert((alu, pc), Some(input));
-            return Some(input);
+            let total = Some(acc * 10 + input);
+            seen.insert((alu, pc), total);
+            return total;
         }
     }
 
@@ -189,13 +189,8 @@ pub fn part1(instructions: &Day24) -> usize {
         Alu::default(),
         [9, 8, 7, 6, 5, 4, 3, 2, 1],
         &mut FxHashMap::default(),
+        0,
     )
-    .unwrap()
-    .to_string()
-    .chars()
-    .rev()
-    .collect::<String>()
-    .parse()
     .unwrap()
 }
 
@@ -205,15 +200,10 @@ pub fn part2(instructions: &Day24) -> usize {
         &instructions.ins,
         0,
         Alu::default(),
-        [1, 2, 7, 3, 4, 5, 6, 8, 9],
+        [1, 2, 7, 3, 4, 9, 9, 9, 9],
         &mut FxHashMap::default(),
+        0,
     )
-    .unwrap()
-    .to_string()
-    .chars()
-    .rev()
-    .collect::<String>()
-    .parse()
     .unwrap()
 }
 
