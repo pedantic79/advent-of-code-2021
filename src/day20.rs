@@ -1,5 +1,4 @@
-use std::collections::HashSet;
-
+use ahash::AHashSet as HashSet;
 use aoc_runner_derive::{aoc, aoc_generator};
 
 type Coord = (isize, isize);
@@ -79,7 +78,7 @@ pub fn generator(input: &str) -> Day20 {
 }
 
 fn tick(lookup: &[bool], image: &Image, flip: bool) -> Image {
-    let mut new_image = HashSet::new();
+    let mut new_image = HashSet::default();
     let min_y = image.min_y - 1;
     let max_y = image.max_y + 1;
     let min_x = image.min_x - 1;

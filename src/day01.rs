@@ -132,10 +132,11 @@ mod tests {
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let input = INPUT.trim_end_matches('\n');
+            let output = generator(input);
 
-            assert_eq!(part1_fastest(&generator(input)), ANSWERS.0);
-            assert_eq!(part2_fastest(&generator(input)), ANSWERS.1);
+            assert_eq!(part1_fastest(&output), ANSWERS.0);
+            assert_eq!(part2_fastest(&output), ANSWERS.1);
         }
     }
 }

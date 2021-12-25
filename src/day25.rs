@@ -179,9 +179,10 @@ v.v..>>v.v
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let input = INPUT.trim_end_matches('\n');
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
+            let output = generator(input);
+            assert_eq!(part1(&output), ANSWERS.0);
         }
     }
 }

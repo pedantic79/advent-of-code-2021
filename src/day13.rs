@@ -1,5 +1,6 @@
-use std::{collections::HashSet, mem::swap};
+use std::mem::swap;
 
+use ahash::AHashSet as HashSet;
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 
@@ -72,7 +73,7 @@ fn fold(
 #[aoc(day13, part1)]
 pub fn part1(Object { dots, ins }: &Object) -> usize {
     let mut dots = dots.clone();
-    let mut temp = HashSet::new();
+    let mut temp = HashSet::default();
 
     fold(&mut dots, &mut temp, ins[0].0, ins[0].1);
     dots.len()
@@ -81,7 +82,7 @@ pub fn part1(Object { dots, ins }: &Object) -> usize {
 #[aoc(day13, part2)]
 pub fn part2(Object { dots, ins }: &Object) -> String {
     let mut dots = dots.clone();
-    let mut temp = HashSet::new();
+    let mut temp = HashSet::default();
 
     for (a, b) in ins {
         fold(&mut dots, &mut temp, *a, *b);
@@ -169,10 +170,11 @@ fold along x=5";
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let input = INPUT.trim_end_matches('\n');
+            let output = generator(input);
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }
