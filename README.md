@@ -1,0 +1,33 @@
+# Advent of Code 2021 - Rust
+
+- [Day 1: Sonar Sweep](src/day01.rs)
+- [Day 2: Dive!](src/day02.rs)
+- [Day 3: Binary Diagnostic](src/day03.rs)
+- [Day 4: Giant Squid](src/day04.rs)
+- [Day 5: Hydrothermal Venture](src/day05.rs)
+- [Day 6: Lanternfish](src/day06.rs)
+- [Day 7: The Treachery of Whales](src/day07.rs)
+- [Day 8: Seven Segment Search](src/day08.rs)
+- [Day 9: Smoke Basin](src/day09.rs)
+- [Day 10: Syntax Scoring](src/day10.rs)
+- [Day 11: Dumbo Octopus](src/day11.rs)
+- [Day 12: Passage Pathing](src/day12.rs)
+- [Day 13: Transparent Origami](src/day13.rs)
+- [Day 14: Extended Polymerization](src/day14.rs)
+- [Day 15: Chiton](src/day15.rs)
+- [Day 16: Packet Decoder](src/day16.rs)
+- [Day 17: Trick Shot](src/day17.rs)
+- [Day 18: Snailfish](src/day18.rs)
+- [Day 19: Beacon Scanner](src/day19.rs)
+- [Day 20: Trench Map](src/day20.rs)
+- [Day 21: Dirac Dice](src/day21.rs)
+- [Day 22: Reactor Reboot](src/day22.rs)
+- [Day 23: Amphipod](src/day23.rs)
+- [Day 24: Arithmetic Logic Unit](src/day24.rs)
+- [Day 25: Sea Cucumber](src/day25.rs)
+
+See:
+
+- [Advent of Code 2021](https://adventofcode.com/2021/)
+- [aoc-runner](https://crates.io/crates/aoc-runner)
+- [cargo-aoc](https://crates.io/crates/cargo-aoc)
