@@ -7,7 +7,7 @@ use std::{
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashSet as HashSet;
 
 type C = i32;
 
@@ -146,8 +146,8 @@ pub fn generator(input: &str) -> Vec<Scanner> {
 
 fn solve(
     scanners: &[Scanner],
-    total: &FxHashSet<Coord3>,
-) -> Option<(Coord3, FxHashSet<Coord3>, usize)> {
+    total: &HashSet<Coord3>,
+) -> Option<(Coord3, HashSet<Coord3>, usize)> {
     (0..scanners.len()).find_map(|i| {
         scanners[i]
             .transforms()
@@ -157,7 +157,7 @@ fn solve(
     })
 }
 
-fn merge(t: &FxHashSet<Coord3>, r: &Scanner) -> Option<(Coord3, FxHashSet<Coord3>)> {
+fn merge(t: &HashSet<Coord3>, r: &Scanner) -> Option<(Coord3, HashSet<Coord3>)> {
     let mut nt = t.clone();
 
     for d in nt
@@ -391,10 +391,11 @@ mod tests {
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let input = INPUT.trim_end_matches('\n');
+            let output = generator(input);
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

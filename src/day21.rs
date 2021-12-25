@@ -1,5 +1,6 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use rustc_hash::FxHashMap;
+// use rustc_hash::FxHashMap as HashMap;
+use ahash::AHashMap as HashMap;
 
 use crate::utils::build_array;
 
@@ -89,7 +90,7 @@ pub fn part1(inputs: &[Player; 2]) -> usize {
 }
 
 fn solve2(
-    memo: &mut FxHashMap<(Player, Player), (usize, usize)>,
+    memo: &mut HashMap<(Player, Player), (usize, usize)>,
     player1: Player,
     player2: Player,
 ) -> (usize, usize) {
@@ -120,7 +121,7 @@ fn solve2(
 
 #[aoc(day21, part2)]
 pub fn part2(inputs: &[Player]) -> usize {
-    solve2(&mut FxHashMap::default(), inputs[0], inputs[1]).0
+    solve2(&mut HashMap::default(), inputs[0], inputs[1]).0
 }
 
 #[cfg(test)]
@@ -164,10 +165,11 @@ Player 2 starting position: 8";
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let input = INPUT.trim_end_matches('\n');
+            let output = generator(input);
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }

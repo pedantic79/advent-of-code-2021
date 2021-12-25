@@ -1,5 +1,6 @@
-use std::{collections::HashMap, convert::Infallible, str::FromStr};
+use std::{convert::Infallible, str::FromStr};
 
+use ahash::AHashMap as HashMap;
 use aoc_runner_derive::{aoc, aoc_generator};
 
 use crate::utils::build_array;
@@ -164,10 +165,11 @@ gcafb gcf dcaebfg ecagb gf abcdeg gaef cafbge fdbac fegbdc | fgae cfgab fg bagce
 
         #[test]
         pub fn test() {
-            let input = INPUT.trim_end_matches('\n'); // Trims trailing newline
+            let input = INPUT.trim_end_matches('\n');
+            let output = generator(input);
 
-            assert_eq!(part1(&generator(input)), ANSWERS.0);
-            assert_eq!(part2(&generator(input)), ANSWERS.1);
+            assert_eq!(part1(&output), ANSWERS.0);
+            assert_eq!(part2(&output), ANSWERS.1);
         }
     }
 }
