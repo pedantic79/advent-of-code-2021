@@ -1,10 +1,12 @@
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
+    iter::repeat,
     ops::{Add, Sub},
 };
 
 use aoc_runner_derive::{aoc, aoc_generator};
+use arrayvec::ArrayVec;
 use itertools::Itertools;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use rustc_hash::FxHashSet as HashSet;
@@ -90,33 +92,8 @@ impl Coord3 {
 pub struct Scanner(Vec<Coord3>);
 
 impl Scanner {
-    fn transforms(&self) -> [Scanner; 24] {
-        let mut res = [
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-            Scanner::default(),
-        ];
+    fn transforms(&self) -> ArrayVec<Scanner, 24> {
+        let mut res: ArrayVec<_, 24> = repeat(Scanner::default()).take(24).collect();
 
         for beacon in self.0.iter().map(|b| b.transforms()) {
             for (i, b) in beacon.iter().enumerate() {
