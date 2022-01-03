@@ -1,5 +1,7 @@
 use std::{fmt::Debug, ops::Mul, str::FromStr};
 
+use arrayvec::ArrayVec;
+
 trait MinMaxIterator: Iterator {
     fn min_max<'a, T>(mut self) -> Option<(&'a T, &'a T)>
     where
@@ -146,19 +148,12 @@ where
     sum % product
 }
 
-pub fn build_array<T, I, const N: usize>(mut iter: I) -> [T; N]
+pub fn build_array<T, I, const N: usize>(iter: I) -> [T; N]
 where
-    T: Default + Copy,
+    T: Debug,
     I: Iterator<Item = T>,
 {
-    let mut res = [T::default(); N];
-
-    // BAD... We don't know if there are enough iterator elements to fill or overfill the array.
-    for slot in res.iter_mut() {
-        *slot = iter.next().unwrap();
-    }
-
-    res
+    iter.collect::<ArrayVec<T, N>>().into_inner().unwrap()
 }
 
 pub fn parse_range<T>(s: &str) -> (T, T)
