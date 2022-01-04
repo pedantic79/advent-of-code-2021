@@ -1,4 +1,4 @@
-use std::{convert::Infallible, str::FromStr};
+use std::{convert::Infallible, ops::Range, str::FromStr};
 
 use ahash::AHashMap as HashMap;
 use aoc_runner_derive::{aoc, aoc_generator};
@@ -31,25 +31,23 @@ fn pack_digit(s: &str) -> (u8, u8) {
         .fold((0, 0), |(tot, count), c| (tot | 1 << (c - b'a'), count + 1))
 }
 
-fn get_range(len: u8) -> (usize, usize) {
+fn get_range(len: u8) -> Range<usize> {
     // constraints are ordered
     // [2, 3, 4, 5, 5, 5, 6, 6, 6, 7]
     match len {
-        2 => (0, 1),
-        3 => (1, 2),
-        4 => (2, 3),
-        5 => (3, 6),
-        6 => (6, 9),
-        7 => (9, 10),
+        2 => 0..1,
+        3 => 1..2,
+        4 => 2..3,
+        5 => 3..6,
+        6 => 6..9,
+        7 => 9..10,
         _ => unreachable!(),
     }
 }
 
 fn find(constraints: [(u8, u8); 10], len: u8, predicate: impl Fn(u8) -> bool) -> u8 {
-    let (begin, end) = get_range(len);
-    constraints[begin..end]
+    constraints[get_range(len)]
         .iter()
-        // .filter(|x| x.1 == len)
         .find(|x| predicate(x.0))
         .unwrap()
         .0
@@ -75,22 +73,18 @@ fn analyze(constraints: [(u8, u8); 10]) -> HashMap<u8, usize> {
     // Of the possible 5 segment numbers, only 3 share the same segments as 1
     res[3] = find(constraints, 5, |x| x & res[1] == res[1]);
 
-    // 9 is made up of the union of 4 and 7
-    let nine_mask = res[4] | res[7];
-    res[9] = find(constraints, 6, |x| x & nine_mask == nine_mask);
+    // Of the possible 6 segment numbers, only 6 doesn't share all the segments as 1
+    res[6] = find(constraints, 6, |x| x & res[1] != res[1]);
 
-    // the middle segment is made up of intersection of Ǝ and E (inverse of 1), e.g. ≡
-    // and the intersection with 4 (the only number we know that has a middle segment but not top or bottom)
-    let middle = (res[3] & !res[1]) & res[4];
+    // Of the possible 6 segment numbers, only 9 share the same segments as 3
+    res[9] = find(constraints, 6, |x| x & res[3] == res[3]);
 
-    // 0 is the only 6 segment number without a middle
-    res[0] = find(constraints, 6, |x| x & middle == 0);
-    // 6 is the remaining 6 segment number, that aren't 0 or 9.
-    res[6] = find(constraints, 6, |x| x != res[0] && x != res[9]);
-    // 5 xor 6 with only 1 segment
-    res[5] = find(constraints, 5, |x| (x ^ res[6]).count_ones() == 1);
-    // 2 is the remaining 5 segment number that aren't 3 or 5
+    // Of the possible 5 segment numbers, only 5 is a subset of 6
+    res[5] = find(constraints, 5, |x| x & res[6] == x);
+
+    // Find 2 and 0 by process of elminination
     res[2] = find(constraints, 5, |x| x != res[3] && x != res[5]);
+    res[0] = find(constraints, 6, |x| x != res[6] && x != res[9]);
 
     res.into_iter().enumerate().map(|(a, b)| (b, a)).collect()
 }
