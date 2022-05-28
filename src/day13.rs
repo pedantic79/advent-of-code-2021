@@ -4,6 +4,8 @@ use ahash::AHashSet as HashSet;
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 
+use crate::utils::parse_pair;
+
 #[derive(Debug, PartialEq)]
 pub struct Object {
     dots: HashSet<(usize, usize)>,
@@ -14,16 +16,7 @@ pub struct Object {
 pub fn generator(input: &str) -> Object {
     let (chunk_a, chunk_b) = input.split_once("\n\n").unwrap();
 
-    let dots = chunk_a
-        .lines()
-        .map(|l| {
-            let (x, y) = l.split_once(',').unwrap();
-            let x = x.parse().unwrap();
-            let y = y.parse().unwrap();
-
-            (x, y)
-        })
-        .collect();
+    let dots = chunk_a.lines().map(|l| parse_pair(l).unwrap()).collect();
 
     let ins = chunk_b
         .lines()

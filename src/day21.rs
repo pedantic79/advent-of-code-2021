@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use aoc_runner_derive::{aoc, aoc_generator};
 // use rustc_hash::FxHashMap as HashMap;
 use ahash::AHashMap as HashMap;
@@ -8,6 +10,17 @@ use crate::utils::build_array;
 pub struct Player {
     pos: u8,
     score: u16,
+}
+
+impl FromStr for Player {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (_, x) = s.split_once(':').ok_or("split_once(':') failed")?;
+        let pos = x.trim_start().parse().map_err(|_| "u8::parse failed")?;
+
+        Ok(Self::new(pos))
+    }
 }
 
 struct Dice {
@@ -61,11 +74,7 @@ impl Player {
 
 #[aoc_generator(day21)]
 pub fn generator(input: &str) -> [Player; 2] {
-    build_array(
-        input
-            .lines()
-            .map(|l| Player::new(l.split_once(':').unwrap().1.trim_start().parse().unwrap())),
-    )
+    build_array(input.lines().map(|l| l.parse().unwrap()))
 }
 
 #[aoc(day21, part1)]

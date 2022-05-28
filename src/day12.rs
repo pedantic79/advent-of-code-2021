@@ -36,7 +36,7 @@ impl PartialEq for Cave {
 
 impl Cave {
     fn new(name: &str) -> Self {
-        let mut s = DefaultHasher::new();
+        let mut s = DefaultHasher::default();
         name.hash(&mut s);
         let hash = s.finish();
         Self {

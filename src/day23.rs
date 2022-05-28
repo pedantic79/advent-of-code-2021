@@ -294,24 +294,24 @@ fn generate_room_to_slot<const SIZE: usize>(
     let (l, r) = Hallway::room_entrance(room_name);
 
     // Loop over from pos in 0..7, producing the new state and cost
-    from_fn(move || loop {
-        if pos == 7 {
-            break None;
-        } else if map.hallway.0[pos] == Amphipod::Empty
-            && map.hallway.is_clear_path_to_slot(pos, l, r)
-        {
-            let mut new_map = map;
-            new_map.hallway.0[pos] = amphipod;
-            let ret = Some((
-                new_map,
-                amphipod.cost_per() * (steps + Hallway::distance(pos, room_name)),
-            ));
-            pos += 1;
+    from_fn(move || {
+        while pos < 7 {
+            if map.hallway.0[pos] == Amphipod::Empty && map.hallway.is_clear_path_to_slot(pos, l, r)
+            {
+                let mut new_map = map;
+                new_map.hallway.0[pos] = amphipod;
+                let ret = Some((
+                    new_map,
+                    amphipod.cost_per() * (steps + Hallway::distance(pos, room_name)),
+                ));
+                pos += 1;
 
-            break ret;
-        } else {
+                return ret;
+            }
             pos += 1;
         }
+
+        None
     })
 }
 
@@ -348,18 +348,20 @@ pub fn generator2(input: &str) -> Map<4> {
     map
 }
 
+fn solve<const SIZE: usize>(start: &Map<SIZE>) -> usize {
+    dijkstra(start, |m| m.generate_move(), |m| m.is_done())
+        .unwrap()
+        .1
+}
+
 #[aoc(day23, part1)]
 pub fn part1(inputs: &Map<2>) -> usize {
-    let a = dijkstra(inputs, |map| map.generate_move(), |map| map.is_done());
-    a.unwrap().1
+    solve(inputs)
 }
 
 #[aoc(day23, part2)]
 pub fn part2(inputs: &Map<4>) -> usize {
-    let a = dijkstra(inputs, |map| map.generate_move(), |map| map.is_done());
-
-    // println!("{:?}", a);
-    a.unwrap().1
+    solve(inputs)
 }
 
 #[cfg(test)]

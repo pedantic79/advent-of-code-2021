@@ -1,4 +1,4 @@
-use std::{convert::Infallible, str::FromStr};
+use std::str::FromStr;
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use nom::{
@@ -92,13 +92,13 @@ impl Snail {
 }
 
 impl FromStr for Snail {
-    // BAD, we should really use a nom::Err<nom::error::Error<&str>>>
-    // but without stable generic associated types, we can't make this work
-    type Err = Infallible;
+    type Err = nom::Err<nom::error::Error<String>>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (_, x) = all_consuming(parse)(s).unwrap();
-        Ok(x)
+        let res = all_consuming(parse)(s);
+        let (_, snail) = res.map_err(|err| err.map_input(|input| input.to_string()))?;
+
+        Ok(snail)
     }
 }
 
