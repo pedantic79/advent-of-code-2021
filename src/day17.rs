@@ -1,5 +1,7 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 
+use crate::utils::parse_range;
+
 #[derive(Debug, PartialEq)]
 pub struct Day17 {
     pub min_x: i32,
@@ -13,13 +15,8 @@ pub fn generator(input: &str) -> Day17 {
     let mut i = input.split(&['=', ','][..]);
     let x = i.nth(1).unwrap();
     let y = i.nth(1).unwrap();
-    let (min_x, max_x) = x.split_once("..").unwrap();
-    let (min_y, max_y) = y.split_once("..").unwrap();
-
-    let min_x = min_x.parse().unwrap();
-    let max_x = max_x.parse().unwrap();
-    let min_y = min_y.parse().unwrap();
-    let max_y = max_y.parse().unwrap();
+    let (min_x, max_x) = parse_range(x).unwrap();
+    let (min_y, max_y) = parse_range(y).unwrap();
 
     Day17 {
         min_x,

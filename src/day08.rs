@@ -1,4 +1,4 @@
-use std::{convert::Infallible, ops::Range, str::FromStr};
+use std::{ops::Range, str::FromStr};
 
 use ahash::AHashMap as HashMap;
 use aoc_runner_derive::{aoc, aoc_generator};
@@ -12,10 +12,10 @@ pub struct Object {
 }
 
 impl FromStr for Object {
-    type Err = Infallible;
+    type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (a, b) = s.split_once(" | ").unwrap();
+        let (a, b) = s.split_once(" | ").ok_or("unable to find |")?;
 
         let mut before = build_array(a.split(' ').map(pack_digit));
         let after = build_array(b.split(' ').map(pack_digit));

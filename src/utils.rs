@@ -151,18 +151,11 @@ where
 pub fn build_array<T, I, const N: usize>(iter: I) -> [T; N]
 where
     T: Debug,
-    I: Iterator<Item = T>,
+    I: IntoIterator<Item = T>,
 {
-    iter.collect::<ArrayVec<T, N>>().into_inner().unwrap()
-}
-
-pub fn parse_range<T>(s: &str) -> (T, T)
-where
-    T: FromStr,
-    <T as FromStr>::Err: Debug,
-{
-    s.split_once("..")
-        .map(|(x, y)| (T::from_str(x).unwrap(), T::from_str(y).unwrap()))
+    iter.into_iter()
+        .collect::<ArrayVec<T, N>>()
+        .into_inner()
         .unwrap()
 }
 
@@ -205,4 +198,20 @@ pub fn neighbors_diag(
 
         Some((r_new, c_new))
     })
+}
+
+pub fn parse_pair<T: FromStr>(s: &str) -> Option<(T, T)> {
+    let (l, r) = s.split_once(',')?;
+
+    let l = l.parse().ok()?;
+    let r = r.parse().ok()?;
+    Some((l, r))
+}
+
+pub fn parse_range<T: FromStr>(s: &str) -> Option<(T, T)> {
+    let (l, r) = s.split_once("..")?;
+
+    let l = l.parse().ok()?;
+    let r = r.parse().ok()?;
+    Some((l, r))
 }

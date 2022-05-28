@@ -2,6 +2,7 @@ use crate::utils::neighbors;
 use std::cmp::Reverse;
 
 use aoc_runner_derive::{aoc, aoc_generator};
+use itertools::Itertools;
 
 #[aoc_generator(day9)]
 pub fn generator(input: &str) -> Vec<Vec<u8>> {
@@ -15,8 +16,9 @@ pub fn generator(input: &str) -> Vec<Vec<u8>> {
 pub fn part1(inputs: &[Vec<u8>]) -> usize {
     let r_max = inputs.len();
     let c_max = inputs[0].len();
+
     (0..r_max)
-        .flat_map(|row| (0..c_max).map(move |col| (row, col)))
+        .cartesian_product(0..c_max)
         .filter_map(|(r, c)| {
             let cell = inputs[r][c];
             if neighbors(r, c, r_max, c_max).all(|(y, x)| inputs[y][x] > cell) {
@@ -33,9 +35,10 @@ pub fn part1(inputs: &[Vec<u8>]) -> usize {
 pub fn part2(inputs: &[Vec<u8>]) -> usize {
     let r_max = inputs.len();
     let c_max = inputs[0].len();
+
     let mut v = inputs.to_vec();
     let mut areas: Vec<_> = (0..r_max)
-        .flat_map(|row| (0..c_max).map(move |col| (row, col)))
+        .cartesian_product(0..c_max)
         .map(|(row, col)| find_basin(&mut v, row, col, r_max, c_max))
         .collect();
 

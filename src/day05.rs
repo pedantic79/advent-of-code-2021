@@ -1,4 +1,7 @@
 use aoc_runner_derive::{aoc, aoc_generator};
+use itertools::Itertools;
+
+use crate::utils::parse_pair;
 
 #[derive(Debug, PartialEq)]
 pub struct Line {
@@ -18,7 +21,7 @@ impl Line {
         let startc = self.start.1.min(self.end.1);
         let stopc = self.start.1.max(self.end.1);
 
-        (startr..=stopr).flat_map(move |r| (startc..=stopc).map(move |c| (r, c)))
+        (startr..=stopr).cartesian_product(startc..=stopc)
     }
 
     fn points_part2(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
@@ -50,14 +53,8 @@ pub fn generator(input: &str) -> Vec<Line> {
         .lines()
         .map(|x| {
             let (start, end) = x.split_once(" -> ").unwrap();
-            let start = start
-                .split_once(',')
-                .map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap()))
-                .unwrap();
-            let end = end
-                .split_once(',')
-                .map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap()))
-                .unwrap();
+            let start = parse_pair(start).unwrap();
+            let end = parse_pair(end).unwrap();
             Line { start, end }
         })
         .collect()

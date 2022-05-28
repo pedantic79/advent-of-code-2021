@@ -27,7 +27,7 @@ pub fn part1(lines: &[String]) -> usize {
 }
 
 fn solve_part2(lines: &[String], prefer: u8, dislike: u8) -> usize {
-    let mut data: Vec<_> = lines.iter().collect();
+    let mut data: Vec<&String> = lines.iter().collect();
 
     for pos in 0.. {
         let counts = data

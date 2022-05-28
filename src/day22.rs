@@ -22,9 +22,9 @@ impl FromStr for Cuboid {
         let mut itr = s.split(&[' ', '=', ','][..]);
         let kind = itr.next().unwrap() == "on";
 
-        let x = parse_range(itr.nth(1).unwrap());
-        let y = parse_range(itr.nth(1).unwrap());
-        let z = parse_range(itr.nth(1).unwrap());
+        let x = parse_range(itr.nth(1).unwrap()).unwrap();
+        let y = parse_range(itr.nth(1).unwrap()).unwrap();
+        let z = parse_range(itr.nth(1).unwrap()).unwrap();
 
         Ok(Self { kind, x, y, z })
     }
