@@ -2,13 +2,13 @@ use std::{convert::Infallible, str::FromStr};
 
 use aoc_runner_derive::{aoc, aoc_generator};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Bingo {
     draw: Vec<usize>,
     boards: Vec<Board>,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Board {
     row: [[Option<u8>; 5]; 5],            // row major version of the board
     col: [[Option<u8>; 5]; 5],            // column major version of the board

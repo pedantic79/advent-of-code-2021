@@ -38,7 +38,7 @@ impl Image {
         ]
         .iter()
         .map(|(dy, dx)| (row + dy, col + dx))
-        .map(|p| if self.get(p, flip) { 1 } else { 0 })
+        .map(|p| usize::from(self.get(p, flip)))
         .fold(0, |acc, n| acc * 2 + n)
     }
 }

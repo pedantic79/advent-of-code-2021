@@ -20,11 +20,7 @@ fn to_decimal(binary: &[usize]) -> usize {
 }
 
 fn bool2usize(b: bool) -> usize {
-    if b {
-        1
-    } else {
-        0
-    }
+    b.into()
 }
 
 fn decode_type4(binary: &[usize], pc: &mut usize) -> usize {

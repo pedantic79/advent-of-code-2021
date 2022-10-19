@@ -5,7 +5,7 @@ use aoc_runner_derive::{aoc, aoc_generator};
 
 use crate::utils::build_array;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Object {
     before: [(u8, u8); 10],
     after: [(u8, u8); 4],

@@ -2,7 +2,7 @@ use aoc_runner_derive::{aoc, aoc_generator};
 
 use crate::utils::parse_range;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Day17 {
     pub min_x: i32,
     pub max_x: i32,

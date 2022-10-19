@@ -3,7 +3,7 @@ use itertools::Itertools;
 
 const SIZE: usize = 26;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Day14 {
     start: String,
     rules: Vec<(u8, u8, u8)>,

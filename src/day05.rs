@@ -3,7 +3,7 @@ use itertools::Itertools;
 
 use crate::utils::parse_pair;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Line {
     start: (usize, usize),
     end: (usize, usize),

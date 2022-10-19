@@ -6,7 +6,7 @@ use itertools::Itertools;
 
 use crate::utils::parse_pair;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Object {
     dots: HashSet<(usize, usize)>,
     ins: Vec<(char, usize)>,
