@@ -1,9 +1,8 @@
 use std::{convert::Infallible, str::FromStr};
 
+use super::common::utils::parse_range;
 use aoc_runner_derive::{aoc, aoc_generator};
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator, ParallelIterator};
-
-use crate::utils::parse_range;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Cuboid {

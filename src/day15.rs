@@ -1,7 +1,6 @@
+use super::common::utils::neighbors;
 use aoc_runner_derive::{aoc, aoc_generator};
 use pathfinding::prelude::dijkstra;
-
-use crate::utils::neighbors;
 
 #[aoc_generator(day15)]
 pub fn generator(input: &str) -> Vec<Vec<usize>> {

@@ -1,7 +1,5 @@
 use aoc_runner_derive::aoc_lib;
-
-pub mod matrix;
-pub mod utils;
+pub mod common;
 
 pub mod day01;
 pub mod day02;

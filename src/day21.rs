@@ -1,10 +1,9 @@
 use std::str::FromStr;
 
-use aoc_runner_derive::{aoc, aoc_generator};
-// use rustc_hash::FxHashMap as HashMap;
+use super::common::utils::build_array;
 use ahash::AHashMap as HashMap;
-
-use crate::utils::build_array;
+use aoc_runner_derive::{aoc, aoc_generator};
+//use rustc_hash::FxHashMap as HashMap;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy, Default)]
 pub struct Player {

@@ -1,7 +1,6 @@
+use super::common::utils::parse_pair;
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-
-use crate::utils::parse_pair;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Line {

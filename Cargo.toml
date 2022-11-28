@@ -3,21 +3,20 @@ name = "advent-of-code-2021"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 aoc-runner = "0.3.0"
 aoc-runner-derive = "0.3.0"
 nom = "7.1.0"
 num = "0.4.0"
 itertools = "0.10.3"
-lazy_static = "1.4.0"
 rayon = "1.5.1"
 pathfinding = "3.0.5"
 nohash-hasher = "0.2.0"
 rustc-hash = "1.1.0"
-ahash = "0.7.6"
+ahash = "0.8.0"
 arrayvec = "0.7.2"
+stable-pattern = "0.1.0"
+once_cell = "1"
 
 [profile.release]
 lto = "fat"

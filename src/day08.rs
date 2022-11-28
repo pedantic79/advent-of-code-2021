@@ -3,7 +3,7 @@ use std::{ops::Range, str::FromStr};
 use ahash::AHashMap as HashMap;
 use aoc_runner_derive::{aoc, aoc_generator};
 
-use crate::utils::build_array;
+use super::common::utils::build_array;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Object {

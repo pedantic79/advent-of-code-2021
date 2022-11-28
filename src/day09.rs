@@ -1,6 +1,6 @@
-use crate::utils::neighbors;
 use std::cmp::Reverse;
 
+use super::common::utils::neighbors;
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
 

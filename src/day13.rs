@@ -1,10 +1,9 @@
 use std::mem::swap;
 
+use super::common::utils::parse_pair;
 use ahash::AHashSet as HashSet;
 use aoc_runner_derive::{aoc, aoc_generator};
 use itertools::Itertools;
-
-use crate::utils::parse_pair;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Object {

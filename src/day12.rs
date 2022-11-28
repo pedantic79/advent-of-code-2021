@@ -1,16 +1,16 @@
-use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
-    hash::{BuildHasher, BuildHasherDefault, Hash, Hasher},
-};
+use std::hash::{Hash, Hasher};
 
 use aoc_runner_derive::{aoc, aoc_generator};
-use lazy_static::lazy_static;
-use nohash_hasher::NoHashHasher;
+use nohash_hasher::IntMap;
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    static ref START: Cave = Cave::new("start");
-    static ref END: Cave = Cave::new("end");
-}
+// lazy_static! {
+//     static ref START: Cave = Cave::new("start");
+//     static ref END: Cave = Cave::new("end");
+// }
+
+static START: Lazy<Cave> = Lazy::new(|| Cave::new("start"));
+static END: Lazy<Cave> = Lazy::new(|| Cave::new("end"));
 
 fn is_little(s: &str) -> bool {
     s.bytes().all(|c| c.is_ascii_lowercase())
@@ -28,6 +28,8 @@ impl std::hash::Hash for Cave {
     }
 }
 
+impl nohash_hasher::IsEnabled for Cave {}
+
 impl PartialEq for Cave {
     fn eq(&self, other: &Self) -> bool {
         self.hash == other.hash
@@ -36,7 +38,7 @@ impl PartialEq for Cave {
 
 impl Cave {
     fn new(name: &str) -> Self {
-        let mut s = DefaultHasher::default();
+        let mut s = HasherType::default();
         name.hash(&mut s);
         let hash = s.finish();
         Self {
@@ -46,15 +48,15 @@ impl Cave {
     }
 }
 
-type HashT = u64;
-type CaveMap<K, V> = HashMap<K, V, BuildHasherDefault<NoHashHasher<HashT>>>;
+type HashMap<K, V> = IntMap<K, V>;
+type HasherType = rustc_hash::FxHasher;
 
-fn make_hashmap<K, V>() -> CaveMap<K, V> {
-    HashMap::with_hasher(BuildHasherDefault::<NoHashHasher<HashT>>::default())
+fn make_hashmap<K, V>() -> HashMap<K, V> {
+    HashMap::default()
 }
 
 #[aoc_generator(day12)]
-pub fn generator(input: &str) -> CaveMap<Cave, Vec<Cave>> {
+pub fn generator(input: &str) -> HashMap<Cave, Vec<Cave>> {
     input
         .lines()
         .map(|l| l.split_once('-').unwrap())
@@ -67,9 +69,9 @@ pub fn generator(input: &str) -> CaveMap<Cave, Vec<Cave>> {
         })
 }
 
-fn search<S: BuildHasher>(
-    graph: &HashMap<Cave, Vec<Cave>, S>,
-    visited: &mut HashMap<Cave, usize, S>,
+fn search(
+    graph: &HashMap<Cave, Vec<Cave>>,
+    visited: &mut HashMap<Cave, usize>,
     location: Cave,
     allow_two_visits: bool,
 ) -> usize {
@@ -95,12 +97,12 @@ fn search<S: BuildHasher>(
 }
 
 #[aoc(day12, part1)]
-pub fn part1(input: &CaveMap<Cave, Vec<Cave>>) -> usize {
+pub fn part1(input: &HashMap<Cave, Vec<Cave>>) -> usize {
     search(input, &mut make_hashmap(), *START, false)
 }
 
 #[aoc(day12, part2)]
-pub fn part2(inputs: &CaveMap<Cave, Vec<Cave>>) -> usize {
+pub fn part2(inputs: &HashMap<Cave, Vec<Cave>>) -> usize {
     let mut visited = make_hashmap();
     visited.insert(*START, 2);
 

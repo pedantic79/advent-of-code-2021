@@ -1,6 +1,6 @@
 use aoc_runner_derive::{aoc, aoc_generator};
 
-use crate::utils::parse_range;
+use super::common::utils::parse_range;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Day17 {

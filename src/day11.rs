@@ -1,4 +1,4 @@
-use crate::utils::{build_array, neighbors_diag};
+use super::common::utils::{build_array, neighbors_diag};
 use aoc_runner_derive::{aoc, aoc_generator};
 
 const SIZE: usize = 10;
