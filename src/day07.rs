@@ -1,5 +1,4 @@
 use aoc_runner_derive::{aoc, aoc_generator};
-use pathfinding::prelude::absdiff;
 
 const TRI: [usize; 2048] = precalculate_triangle_seq();
 
@@ -26,7 +25,7 @@ pub fn generator(input: &str) -> Vec<usize> {
 pub fn part1(inputs: &[usize]) -> usize {
     let median = inputs[inputs.len() / 2];
 
-    inputs.iter().map(|&x| absdiff(x, median)).sum()
+    inputs.iter().map(|&x| x.abs_diff(median)).sum()
 }
 
 #[aoc(day7, part2)]
@@ -34,7 +33,7 @@ pub fn part2(inputs: &[usize]) -> usize {
     let mean: usize = inputs.iter().sum::<usize>() / inputs.len();
 
     (mean..=(mean + 1))
-        .map(|n| inputs.iter().map(|&x| TRI[absdiff(x, n)]).sum())
+        .map(|n| inputs.iter().map(|&x| TRI[x.abs_diff(n)]).sum())
         .min()
         .unwrap()
 }
