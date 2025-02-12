@@ -123,9 +123,8 @@ impl Hallway {
     }
 
     fn is_clear_path_to_room(&self, pos: usize, room_name: Amphipod) -> bool {
-        Self::slot_paths(pos, room_name).map_or(true, |(l, r)| {
-            self.0[l..=r].iter().all(|&x| x == Amphipod::Empty)
-        })
+        Self::slot_paths(pos, room_name)
+            .is_none_or(|(l, r)| self.0[l..=r].iter().all(|&x| x == Amphipod::Empty))
     }
 }
 

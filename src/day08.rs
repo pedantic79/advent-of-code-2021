@@ -27,8 +27,9 @@ impl FromStr for Object {
 }
 
 fn pack_digit(s: &str) -> (u8, u8) {
-    s.bytes()
-        .fold((0, 0), |(tot, count), c| (tot | 1 << (c - b'a'), count + 1))
+    s.bytes().fold((0, 0), |(tot, count), c| {
+        (tot | (1 << (c - b'a')), count + 1)
+    })
 }
 
 fn get_range(len: u8) -> Range<usize> {

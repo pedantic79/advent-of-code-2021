@@ -6,7 +6,7 @@ use nom::{
     character::complete::{char, digit1},
     combinator::{all_consuming, map},
     sequence::{delimited, separated_pair},
-    IResult,
+    IResult, Parser,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -95,7 +95,7 @@ impl FromStr for Snail {
     type Err = nom::Err<nom::error::Error<String>>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let res = all_consuming(parse)(s);
+        let res = all_consuming(parse).parse(s);
         let (_, snail) = res.map_err(|err| err.map_input(|input| input.to_string()))?;
 
         Ok(snail)
@@ -103,18 +103,19 @@ impl FromStr for Snail {
 }
 
 fn parse(s: &str) -> IResult<&str, Snail> {
-    delimited(char('['), pair, char(']'))(s)
+    delimited(char('['), pair, char(']')).parse(s)
 }
 
 fn pair(s: &str) -> IResult<&str, Snail> {
     map(
         separated_pair(alt((number, parse)), char(','), alt((number, parse))),
         |(left, right)| Snail::new(left, right),
-    )(s)
+    )
+    .parse(s)
 }
 
 fn number(s: &str) -> IResult<&str, Snail> {
-    map(digit1, |n: &str| Snail::Num(n.parse().unwrap()))(s)
+    map(digit1, |n: &str| Snail::Num(n.parse().unwrap())).parse(s)
 }
 
 fn add(left: Snail, right: Snail) -> Snail {
