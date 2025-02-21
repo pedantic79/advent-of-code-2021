@@ -1,7 +1,7 @@
 use std::{
     fmt::{Debug, Display},
     hash::Hash,
-    iter::repeat,
+    iter,
     ops::{Add, Sub},
 };
 
@@ -93,7 +93,7 @@ pub struct Scanner(Vec<Coord3>);
 
 impl Scanner {
     fn transforms(&self) -> ArrayVec<Scanner, 24> {
-        let mut res: ArrayVec<_, 24> = repeat(Scanner::default()).take(24).collect();
+        let mut res: ArrayVec<_, 24> = iter::repeat_n(Scanner::default(), 24).collect();
 
         for beacon in self.0.iter().map(|b| b.transforms()) {
             for (i, b) in beacon.iter().enumerate() {

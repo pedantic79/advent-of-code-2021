@@ -51,9 +51,9 @@ fn solve<const N: usize>(inputs: &Day14) -> usize {
     for _ in 0..N {
         let mut new_s = [0; SIZE * SIZE];
 
-        for &(a, b, gen) in inputs.rules.iter() {
+        for &(a, b, r#gen) in inputs.rules.iter() {
             let count = s[encode(a, b)];
-            let (left, right) = (encode(a, gen), encode(gen, b));
+            let (left, right) = (encode(a, r#gen), encode(r#gen, b));
             new_s[left] += count;
             new_s[right] += count;
         }

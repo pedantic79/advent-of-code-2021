@@ -2,11 +2,11 @@ use std::str::FromStr;
 
 use aoc_runner_derive::{aoc, aoc_generator};
 use nom::{
+    IResult, Parser,
     branch::alt,
     character::complete::{char, digit1},
     combinator::{all_consuming, map},
     sequence::{delimited, separated_pair},
-    IResult, Parser,
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -51,7 +51,7 @@ impl Snail {
         match self {
             Snail::Num(n) if *n < 10 => false,
             Snail::Num(n) => {
-                *self = Snail::new(*n / 2, (*n + 1) / 2);
+                *self = Snail::new(*n / 2, n.div_ceil(2));
                 true
             }
             Snail::Pair(a, b) => a.split() || b.split(),
